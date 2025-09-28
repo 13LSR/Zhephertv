@@ -6,15 +6,15 @@ import { useEffect, useState } from 'react';
 import type { PlayRecord } from '@/lib/db.client';
 import {
   clearAllPlayRecords,
+  forceRefreshPlayRecordsCache,
   getAllPlayRecords,
   subscribeToDataUpdates,
-  forceRefreshPlayRecordsCache,
 } from '@/lib/db.client';
 import {
+  type WatchingUpdate,
+  checkWatchingUpdates,
   getDetailedWatchingUpdates,
   subscribeToWatchingUpdatesEvent,
-  checkWatchingUpdates,
-  type WatchingUpdate,
 } from '@/lib/watching-updates';
 
 import ScrollableRow from '@/components/ScrollableRow';

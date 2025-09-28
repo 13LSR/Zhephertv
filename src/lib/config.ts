@@ -11,12 +11,6 @@ export interface ApiSite {
   detail?: string;
 }
 
-export interface LiveCfg {
-  name: string;
-  url: string;
-  ua?: string;
-  epg?: string; // 节目单
-}
 
 interface ConfigFileStruct {
   cache_time?: number;
@@ -28,9 +22,6 @@ interface ConfigFileStruct {
     type: 'movie' | 'tv';
     query: string;
   }[];
-  lives?: {
-    [key: string]: LiveCfg;
-  }
 }
 
 export const API_CONFIG = {
@@ -142,42 +133,6 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
   // 将 Map 转换回数组
   adminConfig.CustomCategories = Array.from(currentCustomCategories.values());
 
-  const livesFromFile = Object.entries(fileConfig.lives || []);
-  const currentLives = new Map(
-    (adminConfig.LiveConfig || []).map((l) => [l.key, l])
-  );
-  livesFromFile.forEach(([key, site]) => {
-    const existingLive = currentLives.get(key);
-    if (existingLive) {
-      existingLive.name = site.name;
-      existingLive.url = site.url;
-      existingLive.ua = site.ua;
-      existingLive.epg = site.epg;
-    } else {
-      // 如果不存在，创建新条目
-      currentLives.set(key, {
-        key,
-        name: site.name,
-        url: site.url,
-        ua: site.ua,
-        epg: site.epg,
-        channelNumber: 0,
-        from: 'config',
-        disabled: false,
-      });
-    }
-  });
-
-  // 检查现有 LiveConfig 是否在 fileConfig.lives 中，如果不在则标记为 custom
-  const livesFromFileKeys = new Set(livesFromFile.map(([key]) => key));
-  currentLives.forEach((live) => {
-    if (!livesFromFileKeys.has(live.key)) {
-      live.from = 'custom';
-    }
-  });
-
-  // 将 Map 转换回数组
-  adminConfig.LiveConfig = Array.from(currentLives.values());
 
   return adminConfig;
 }
@@ -229,7 +184,6 @@ async function getInitConfig(configFile: string, subConfig: {
     },
     SourceConfig: [],
     CustomCategories: [],
-    LiveConfig: [],
   };
 
   // 补充用户信息
@@ -274,22 +228,6 @@ async function getInitConfig(configFile: string, subConfig: {
     });
   });
 
-  // 从配置文件中补充直播源信息
-  Object.entries(cfgFile.lives || []).forEach(([key, live]) => {
-    if (!adminConfig.LiveConfig) {
-      adminConfig.LiveConfig = [];
-    }
-    adminConfig.LiveConfig.push({
-      key,
-      name: live.name,
-      url: live.url,
-      ua: live.ua,
-      epg: live.epg,
-      channelNumber: 0,
-      from: 'config',
-      disabled: false,
-    });
-  });
 
   return adminConfig;
 }
@@ -341,9 +279,6 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
   if (!adminConfig.CustomCategories || !Array.isArray(adminConfig.CustomCategories)) {
     adminConfig.CustomCategories = [];
   }
-  if (!adminConfig.LiveConfig || !Array.isArray(adminConfig.LiveConfig)) {
-    adminConfig.LiveConfig = [];
-  }
   
   // 确保网盘搜索配置有默认值
   if (!adminConfig.NetDiskConfig) {
@@ -367,17 +302,6 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
     };
   }
 
-  // 确保YouTube配置有默认值
-  if (!adminConfig.YouTubeConfig) {
-    adminConfig.YouTubeConfig = {
-      enabled: false,                                   // 默认关闭
-      apiKey: '',                                       // 默认为空，需要管理员配置
-      enableDemo: true,                                 // 默认启用演示模式
-      maxResults: 25,                                   // 默认每页25个结果
-      enabledRegions: ['US', 'CN', 'JP', 'KR', 'GB', 'DE', 'FR'], // 默认启用的地区
-      enabledCategories: ['Film & Animation', 'Music', 'Gaming', 'News & Politics', 'Entertainment'] // 默认启用的分类
-    };
-  }
 
   // 站长变更自检
   const ownerUser = process.env.USERNAME;
@@ -429,15 +353,6 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
     return true;
   });
 
-  // 直播源去重
-  const seenLiveKeys = new Set<string>();
-  adminConfig.LiveConfig = adminConfig.LiveConfig.filter((live) => {
-    if (seenLiveKeys.has(live.key)) {
-      return false;
-    }
-    seenLiveKeys.add(live.key);
-    return true;
-  });
 
   return adminConfig;
 }
@@ -521,7 +436,7 @@ export async function setCachedConfig(config: AdminConfig) {
 // 特殊功能权限检查
 export async function hasSpecialFeaturePermission(
   username: string,
-  feature: 'ai-recommend' | 'youtube-search',
+  feature: 'ai-recommend',
   providedConfig?: AdminConfig
 ): Promise<boolean> {
   try {
@@ -537,7 +452,7 @@ export async function hasSpecialFeaturePermission(
     // 如果用户不在配置中，检查是否是新注册用户
     if (!userConfig) {
       // 新注册用户默认无特殊功能权限，但不阻止基本访问
-      // 这里返回false是正确的，因为新用户默认不应该有AI/YouTube权限
+      // 这里返回false是正确的，因为新用户默认不应该有AI推荐权限
       return false;
     }
 

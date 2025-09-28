@@ -2,20 +2,18 @@
 
 'use client';
 
-import { Brain, Send, Sparkles, X, Play, ExternalLink } from 'lucide-react';
+import { Brain, ExternalLink,Play, Send, Sparkles, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import {
-  addMovieTitleClickListeners,
   AI_RECOMMEND_PRESETS,
   AIMessage,
   cleanMovieTitle,
   formatAIResponseWithLinks,
-  generateChatSummary,
   generateSearchUrl,
-  sendAIRecommendMessage,
   MovieRecommendation,
+  sendAIRecommendMessage,
 } from '@/lib/ai-recommend.client';
 
 interface AIRecommendModalProps {
@@ -160,7 +158,6 @@ export default function AIRecommendModal({ isOpen, onClose }: AIRecommendModalPr
         content: response.choices[0].message.content,
         timestamp: new Date().toISOString(),
         recommendations: response.recommendations || [],
-        youtubeVideos: response.youtubeVideos || [],
         videoLinks: response.videoLinks || [],
         type: response.type || 'normal',
       };

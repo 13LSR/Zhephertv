@@ -1,6 +1,6 @@
 'use client';
 
-import { getAllPlayRecords, PlayRecord, generateStorageKey, forceRefreshPlayRecordsCache, savePlayRecord } from './db.client';
+import { forceRefreshPlayRecordsCache, generateStorageKey, getAllPlayRecords, PlayRecord, savePlayRecord } from './db.client';
 
 // 缓存键
 const WATCHING_UPDATES_CACHE_KEY = 'moontv_watching_updates';

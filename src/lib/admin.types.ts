@@ -53,16 +53,6 @@ export interface AdminConfig {
     from: 'config' | 'custom';
     disabled?: boolean;
   }[];
-  LiveConfig?: {
-    key: string;
-    name: string;
-    url: string;  // m3u 地址
-    ua?: string;
-    epg?: string; // 节目单
-    from: 'config' | 'custom';
-    channelNumber?: number;
-    disabled?: boolean;
-  }[];
   NetDiskConfig?: {
     enabled: boolean;                    // 是否启用网盘搜索
     pansouUrl: string;                   // PanSou服务地址
@@ -76,14 +66,6 @@ export interface AdminConfig {
     model: string;                       // 模型名称
     temperature: number;                 // 温度参数 0-2
     maxTokens: number;                   // 最大token数
-  };
-  YouTubeConfig?: {
-    enabled: boolean;                    // 是否启用YouTube搜索功能
-    apiKey: string;                      // YouTube Data API v3密钥
-    enableDemo: boolean;                 // 是否启用演示模式
-    maxResults: number;                  // 每页最大搜索结果数
-    enabledRegions: string[];            // 启用的地区代码列表
-    enabledCategories: string[];         // 启用的视频分类列表
   };
   TVBoxSecurityConfig?: {
     enableAuth: boolean;                 // 是否启用Token验证

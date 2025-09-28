@@ -127,6 +127,16 @@ export async function POST(req: NextRequest) {
     // 数据库 / redis 模式——校验用户名并尝试连接数据库
     const { username, password } = await req.json();
 
+    // 调试日志
+    console.log('🔐 登录尝试:', {
+      输入用户名: username,
+      输入密码: password,
+      环境变量用户名: process.env.USERNAME,
+      环境变量密码: process.env.PASSWORD,
+      用户名匹配: username === process.env.USERNAME,
+      密码匹配: password === process.env.PASSWORD
+    });
+
     if (!username || typeof username !== 'string') {
       return NextResponse.json({ error: '用户名不能为空' }, { status: 400 });
     }
@@ -158,21 +168,27 @@ export async function POST(req: NextRequest) {
         secure: false, // 根据协议自动设置
       });
 
+      console.log('✅ 站长登录成功!');
       return response;
     } else if (username === process.env.USERNAME) {
+      console.log('❌ 站长用户名正确但密码错误');
       return NextResponse.json({ error: '用户名或密码错误' }, { status: 401 });
     }
 
+    console.log('🔍 尝试在数据库中查找用户:', username);
     const config = await getConfig();
     const user = config.UserConfig.Users.find((u) => u.username === username);
     if (user && user.banned) {
+      console.log('❌ 用户被封禁:', username);
       return NextResponse.json({ error: '用户被封禁' }, { status: 401 });
     }
 
     // 校验用户密码
     try {
+      console.log('🔑 验证数据库用户密码:', username);
       const pass = await db.verifyUser(username, password);
       if (!pass) {
+        console.log('❌ 数据库密码验证失败:', username);
         return NextResponse.json(
           { error: '用户名或密码错误' },
           { status: 401 }

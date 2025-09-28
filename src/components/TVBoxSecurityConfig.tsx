@@ -2,7 +2,7 @@
 
 'use client';
 
-import { AlertCircle, CheckCircle, Shield, Copy, ExternalLink } from 'lucide-react';
+import { AlertCircle, CheckCircle, Copy, ExternalLink,Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AdminConfig } from '@/lib/admin.types';

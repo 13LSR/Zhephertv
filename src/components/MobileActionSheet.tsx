@@ -1,4 +1,4 @@
-import { Radio, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -23,7 +23,7 @@ interface MobileActionSheetProps {
   sourceName?: string; // 播放源名称
   currentEpisode?: number; // 当前集数
   totalEpisodes?: number; // 总集数
-  origin?: 'vod' | 'live';
+  origin?: 'vod';
 }
 
 const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
@@ -198,7 +198,7 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
                   src={poster}
                   alt={title}
                   fill
-                  className={origin === 'live' ? 'object-contain' : 'object-cover'}
+                  className="object-cover"
                   loading="lazy"
                 />
               </div>
@@ -210,9 +210,6 @@ const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
                 </h3>
                 {sourceName && (
                   <span className="flex-shrink-0 text-xs px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
-                    {origin === 'live' && (
-                      <Radio size={12} className="inline-block text-gray-500 dark:text-gray-400 mr-1.5" />
-                    )}
                     {sourceName}
                   </span>
                 )}

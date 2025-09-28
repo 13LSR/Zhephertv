@@ -53,17 +53,16 @@ const devicePerformance = getDevicePerformanceLevel();
 
 // 导出设备检测结果供其他模块使用
 export {
+  devicePerformance,
+  getDevicePerformanceLevel,
+  isAndroid,
   isIOS,
   isIOS13Plus,
   isIPad,
-  isAndroid,
   isMobile,
-  isTablet,
   isSafari,
-  isWebKit,
-  devicePerformance,
-  getDevicePerformanceLevel
-};
+  isTablet,
+  isWebKit};
 
 function getDoubanImageProxyConfig(): {
   proxyType:

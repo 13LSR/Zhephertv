@@ -1,18 +1,18 @@
 'use client';
 
+import { ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ChevronUp } from 'lucide-react';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
 import { PlayRecord, ReleaseCalendarItem } from '@/lib/types';
 import {
+  type WatchingUpdate,
+  checkWatchingUpdates,
   getCachedWatchingUpdates,
   getDetailedWatchingUpdates,
-  checkWatchingUpdates,
   markUpdatesAsViewed,
-  type WatchingUpdate,
 } from '@/lib/watching-updates';
 
 import PageLayout from '@/components/PageLayout';

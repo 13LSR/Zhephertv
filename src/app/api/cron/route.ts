@@ -5,7 +5,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getConfig, refineConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { fetchVideoDetail } from '@/lib/fetchVideoDetail';
-import { refreshLiveChannels } from '@/lib/live';
 import { SearchResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -95,21 +94,9 @@ async function cronJob() {
 async function refreshAllLiveChannels() {
   const config = await getConfig();
 
-  // 并发刷新所有启用的直播源
-  const refreshPromises = (config.LiveConfig || [])
-    .filter(liveInfo => !liveInfo.disabled)
-    .map(async (liveInfo) => {
-      try {
-        const nums = await refreshLiveChannels(liveInfo);
-        liveInfo.channelNumber = nums;
-      } catch (error) {
-        console.error(`刷新直播源失败 [${liveInfo.name || liveInfo.key}]:`, error);
-        liveInfo.channelNumber = 0;
-      }
-    });
+  // 直播源功能已移除
 
-  // 等待所有刷新任务完成
-  await Promise.all(refreshPromises);
+  // 直播源功能已移除，无需执行刷新操作
 
   // 保存配置
   await db.saveAdminConfig(config);
@@ -270,10 +257,8 @@ async function refreshRecordAndFavorites() {
 
       // 收藏
       try {
-        let favorites = await db.getAllFavorites(user);
-        favorites = Object.fromEntries(
-          Object.entries(favorites).filter(([_, fav]) => fav.origin !== 'live')
-        );
+        const favorites = await db.getAllFavorites(user);
+        // Live类型收藏夹已不存在，无需过滤
         const totalFavorites = Object.keys(favorites).length;
         let processedFavorites = 0;
 

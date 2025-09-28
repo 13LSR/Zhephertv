@@ -178,9 +178,9 @@ if (typeof window !== 'undefined') {
 }
 
 export {
-  TMDB_CACHE_EXPIRE,
-  getCacheKey,
-  getCache,
-  setCache,
   cleanExpiredCache,
+  getCache,
+  getCacheKey,
+  setCache,
+  TMDB_CACHE_EXPIRE,
 };

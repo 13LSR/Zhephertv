@@ -24,7 +24,7 @@ export interface Favorite {
   cover: string;
   save_time: number; // 记录保存时间（时间戳）
   search_title: string; // 搜索时使用的标题
-  origin?: 'vod' | 'live' | 'shortdrama';
+  origin?: 'vod' | 'shortdrama';
 }
 
 // 短剧分类数据结构

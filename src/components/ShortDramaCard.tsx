@@ -6,13 +6,13 @@ import { Play, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { ShortDramaItem } from '@/lib/types';
 import {
-  SHORTDRAMA_CACHE_EXPIRE,
-  getCacheKey,
   getCache,
+  getCacheKey,
   setCache,
+  SHORTDRAMA_CACHE_EXPIRE,
 } from '@/lib/shortdrama-cache';
+import { ShortDramaItem } from '@/lib/types';
 
 interface ShortDramaCardProps {
   drama: ShortDramaItem;

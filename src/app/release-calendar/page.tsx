@@ -1,9 +1,10 @@
 'use client';
 
+import { Calendar, ChevronUp,Clock, Film, Filter, MapPin, Search, Tag, Tv } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Calendar, Filter, Search, Clock, Film, Tv, MapPin, Tag, ChevronUp } from 'lucide-react';
 
 import { ReleaseCalendarItem, ReleaseCalendarResult } from '@/lib/types';
+
 import PageLayout from '@/components/PageLayout';
 
 export default function ReleaseCalendarPage() {
@@ -809,7 +810,7 @@ export default function ReleaseCalendarPage() {
                           isToday ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : ''
                         }`}>
                           {/* 日期标题 */}
-                          <div className={`flex items-center justify-between mb-3 pb-2 border-b border-gray-200 dark:border-gray-700`}>
+                          <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200 dark:border-gray-700">
                             <h4 className={`text-lg font-semibold ${
                               isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
                             }`}>

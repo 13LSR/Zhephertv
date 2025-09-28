@@ -7,22 +7,17 @@ import React, { startTransition, Suspense, useEffect, useMemo, useRef, useState 
 
 import {
   addSearchHistory,
-  clearSearchHistory,
-  deleteSearchHistory,
   getSearchHistory,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { SearchResult } from '@/lib/types';
 
+import NetDiskSearchResults from '@/components/NetDiskSearchResults';
 import PageLayout from '@/components/PageLayout';
 import SearchResultFilter, { SearchFilterCategory } from '@/components/SearchResultFilter';
 import SearchSuggestions from '@/components/SearchSuggestions';
-import VideoCard, { VideoCardHandle } from '@/components/VideoCard';
-import VirtualSearchGrid from '@/components/VirtualSearchGrid';
-import NetDiskSearchResults from '@/components/NetDiskSearchResults';
-import YouTubeVideoCard from '@/components/YouTubeVideoCard';
-import DirectYouTubePlayer from '@/components/DirectYouTubePlayer';
 import TMDBFilterPanel, { TMDBFilterState } from '@/components/TMDBFilterPanel';
+import VideoCard, { VideoCardHandle } from '@/components/VideoCard';
 
 function SearchPageClient() {
   // 搜索历史
@@ -53,21 +48,15 @@ function SearchPageClient() {
     return true;
   });
 
+  // 搜索类型状态
+  const [searchType, setSearchType] = useState<'video' | 'netdisk' | 'tmdb-actor'>('video');
+
   // 网盘搜索相关状态
-  const [searchType, setSearchType] = useState<'video' | 'netdisk' | 'youtube' | 'tmdb-actor'>('video');
   const [netdiskResults, setNetdiskResults] = useState<{ [key: string]: any[] } | null>(null);
   const [netdiskLoading, setNetdiskLoading] = useState(false);
   const [netdiskError, setNetdiskError] = useState<string | null>(null);
   const [netdiskTotal, setNetdiskTotal] = useState(0);
   
-  // YouTube搜索相关状态
-  const [youtubeResults, setYoutubeResults] = useState<any[] | null>(null);
-  const [youtubeLoading, setYoutubeLoading] = useState(false);
-  const [youtubeError, setYoutubeError] = useState<string | null>(null);
-  const [youtubeWarning, setYoutubeWarning] = useState<string | null>(null);
-  const [youtubeContentType, setYoutubeContentType] = useState<'all' | 'music' | 'movie' | 'educational' | 'gaming' | 'sports' | 'news'>('all');
-  const [youtubeSortOrder, setYoutubeSortOrder] = useState<'relevance' | 'date' | 'rating' | 'viewCount' | 'title'>('relevance');
-  const [youtubeMode, setYoutubeMode] = useState<'search' | 'direct'>('search'); // 新增：YouTube模式
 
   // TMDB演员搜索相关状态
   const [tmdbActorResults, setTmdbActorResults] = useState<any[] | null>(null);
@@ -476,21 +465,16 @@ function SearchPageClient() {
     };
   }, []);
 
-  // 监听搜索类型变化，如果切换到网盘/YouTube/TMDB演员搜索且有搜索词，立即搜索
   useEffect(() => {
-    if ((searchType === 'netdisk' || searchType === 'youtube' || searchType === 'tmdb-actor') && showResults) {
-      const currentQuery = searchQuery.trim() || searchParams.get('q');
-      if (currentQuery) {
-        if (searchType === 'netdisk' && !netdiskLoading && !netdiskResults && !netdiskError) {
-          handleNetDiskSearch(currentQuery);
-        } else if (searchType === 'youtube' && !youtubeLoading && !youtubeResults && !youtubeError) {
-          handleYouTubeSearch(currentQuery);
-        } else if (searchType === 'tmdb-actor' && !tmdbActorLoading && !tmdbActorResults && !tmdbActorError) {
-          handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
-        }
+    const currentQuery = searchQuery.trim() || searchParams.get('q');
+    if (currentQuery) {
+      if (searchType === 'netdisk' && !netdiskLoading && !netdiskResults && !netdiskError) {
+        handleNetDiskSearch(currentQuery);
+      } else if (searchType === 'tmdb-actor' && !tmdbActorLoading && !tmdbActorResults && !tmdbActorError) {
+        handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
       }
     }
-  }, [searchType, showResults, searchQuery, searchParams, netdiskLoading, netdiskResults, netdiskError, youtubeLoading, youtubeResults, youtubeError, tmdbActorLoading, tmdbActorResults, tmdbActorError]);
+  }, [searchType, searchQuery, searchParams, netdiskLoading, netdiskResults, netdiskError, tmdbActorLoading, tmdbActorResults, tmdbActorError, tmdbActorType, tmdbFilterState]);
 
   useEffect(() => {
     // 当搜索参数变化时更新搜索状态
@@ -687,51 +671,6 @@ function SearchPageClient() {
     }
   };
 
-  // YouTube搜索函数
-  const handleYouTubeSearch = async (query: string, contentType = youtubeContentType, sortOrder = youtubeSortOrder) => {
-    if (!query.trim()) return;
-
-    setYoutubeLoading(true);
-    setYoutubeError(null);
-    setYoutubeWarning(null);
-    setYoutubeResults(null);
-
-    try {
-      // 构建搜索URL，包含内容类型和排序参数
-      let searchUrl = `/api/youtube/search?q=${encodeURIComponent(query.trim())}`;
-      if (contentType && contentType !== 'all') {
-        searchUrl += `&contentType=${contentType}`;
-      }
-      if (sortOrder && sortOrder !== 'relevance') {
-        searchUrl += `&order=${sortOrder}`;
-      }
-      const response = await fetch(searchUrl);
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setYoutubeResults(data.videos || []);
-        // 如果有警告信息，设置警告状态
-        if (data.warning) {
-          setYoutubeWarning(data.warning);
-        }
-      } else {
-        setYoutubeError(data.error || 'YouTube搜索失败');
-      }
-    } catch (error: any) {
-      console.error('YouTube搜索请求失败:', error);
-      // 尝试提取具体的错误消息
-      let errorMessage = 'YouTube搜索请求失败，请稍后重试';
-      if (error.message) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      }
-      setYoutubeError(errorMessage);
-    } finally {
-      setYoutubeLoading(false);
-    }
-  };
-
   // 网盘搜索函数
   const handleNetDiskSearch = async (query: string) => {
     if (!query.trim()) return;
@@ -829,10 +768,7 @@ function SearchPageClient() {
       // 网盘搜索 - 也更新URL保持一致性
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
       handleNetDiskSearch(trimmed);
-    } else if (searchType === 'youtube') {
-      // YouTube搜索
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
-      handleYouTubeSearch(trimmed);
     } else if (searchType === 'tmdb-actor') {
       // TMDB演员搜索
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
@@ -884,12 +820,9 @@ function SearchPageClient() {
                   type='button'
                   onClick={() => {
                     setSearchType('video');
-                    // 切换到影视搜索时，清除网盘、YouTube和TMDB演员搜索状态
                     setNetdiskResults(null);
                     setNetdiskError(null);
                     setNetdiskTotal(0);
-                    setYoutubeResults(null);
-                    setYoutubeError(null);
                     setTmdbActorResults(null);
                     setTmdbActorError(null);
                     // 如果有搜索词且当前显示结果，触发影视搜索
@@ -914,8 +847,6 @@ function SearchPageClient() {
                     // 清除之前的网盘搜索状态，确保重新开始
                     setNetdiskError(null);
                     setNetdiskResults(null);
-                    setYoutubeResults(null);
-                    setYoutubeError(null);
                     setTmdbActorResults(null);
                     setTmdbActorError(null);
                     // 如果当前有搜索词，立即触发网盘搜索
@@ -935,36 +866,6 @@ function SearchPageClient() {
                 <button
                   type='button'
                   onClick={() => {
-                    const wasAlreadyYoutube = searchType === 'youtube';
-                    setSearchType('youtube');
-                    // 清除之前的YouTube搜索状态，确保重新开始
-                    setYoutubeError(null);
-                    setYoutubeWarning(null);
-                    setYoutubeResults(null);
-                    // 注意：不重置排序和内容类型，保持用户选择
-                    setNetdiskResults(null);
-                    setNetdiskError(null);
-                    setNetdiskTotal(0);
-                    setTmdbActorResults(null);
-                    setTmdbActorError(null);
-                    // 如果当前有搜索词，立即触发YouTube搜索
-                    const currentQuery = searchQuery.trim() || searchParams?.get('q');
-                    if (currentQuery && showResults) {
-                      // 如果已经在YouTube标签，或者是新切换，都强制重新搜索
-                      setTimeout(() => handleYouTubeSearch(currentQuery), 0);
-                    }
-                  }}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    searchType === 'youtube'
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                  }`}
-                >
-                  📺 YouTube
-                </button>
-                <button
-                  type='button'
-                  onClick={() => {
                     setSearchType('tmdb-actor');
                     // 清除之前的搜索状态
                     setTmdbActorError(null);
@@ -972,8 +873,6 @@ function SearchPageClient() {
                     setNetdiskResults(null);
                     setNetdiskError(null);
                     setNetdiskTotal(0);
-                    setYoutubeResults(null);
-                    setYoutubeError(null);
                     // 如果当前有搜索词，立即触发TMDB演员搜索
                     const currentQuery = searchQuery.trim() || searchParams?.get('q');
                     if (currentQuery && showResults) {
@@ -1001,7 +900,6 @@ function SearchPageClient() {
                 value={searchQuery}
                 onChange={handleInputChange}
                 onFocus={handleInputFocus}
-                placeholder={searchType === 'video' ? '搜索电影、电视剧...' : searchType === 'netdisk' ? '搜索网盘资源...' : searchType === 'youtube' ? '搜索YouTube视频...' : '搜索演员姓名...'}
                 autoComplete="off"
                 className='w-full h-12 rounded-lg bg-gray-50/80 py-3 pl-10 pr-12 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:bg-white border border-gray-200/50 shadow-sm dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-500 dark:focus:bg-gray-700 dark:border-gray-700'
               />
@@ -1169,190 +1067,9 @@ function SearchPageClient() {
                     </div>
                   ) : null}
                 </>
-              ) : searchType === 'youtube' ? (
-                /* YouTube搜索结果 */
-                <>
-                  <div className='mb-4'>
-                    <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
-                      YouTube视频
-                      {youtubeLoading && youtubeMode === 'search' && (
-                        <span className='ml-2 inline-block align-middle'>
-                          <span className='inline-block h-3 w-3 border-2 border-gray-300 border-t-red-500 rounded-full animate-spin'></span>
-                        </span>
-                      )}
-                    </h2>
-                    
-                    {/* YouTube模式切换 */}
-                    <div className='mt-3 flex items-center gap-2'>
-                      <div className='inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1 space-x-1'>
-                        <button
-                          type='button'
-                          onClick={() => {
-                            setYoutubeMode('search');
-                            // 切换到搜索模式时清除直接播放相关状态
-                            setYoutubeError(null);
-                            setYoutubeWarning(null);
-                          }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            youtubeMode === 'search'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                          }`}
-                        >
-                          🔍 搜索视频
-                        </button>
-                        <button
-                          type='button'
-                          onClick={() => {
-                            setYoutubeMode('direct');
-                            // 切换到直接播放模式时清除搜索结果
-                            setYoutubeResults(null);
-                            setYoutubeError(null);
-                            setYoutubeWarning(null);
-                          }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            youtubeMode === 'direct'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                          }`}
-                        >
-                          🔗 直接播放
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* YouTube内容区域 */}
-                  {youtubeMode === 'direct' ? (
-                    /* 直接播放模式 */
-                    <div className='space-y-4'>
-                      <div className='bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900/20 dark:border-blue-800'>
-                        <div className='flex items-center text-blue-800 dark:text-blue-200 mb-2'>
-                          <svg className='w-5 h-5 mr-2' fill='currentColor' viewBox='0 0 20 20'>
-                            <path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z' clipRule='evenodd' />
-                          </svg>
-                          <span className='font-medium'>💡 直接播放YouTube视频</span>
-                        </div>
-                        <p className='text-blue-700 dark:text-blue-300 text-sm'>
-                          粘贴任意YouTube链接，无需搜索即可直接播放视频。支持所有常见的YouTube链接格式。
-                        </p>
-                      </div>
-                      <DirectYouTubePlayer />
-                    </div>
-                  ) : (
-                    /* 搜索模式 */
-                    <>
-                      {/* 内容类型选择器 */}
-                      <div className='mt-3 flex flex-wrap gap-2'>
-                        {[
-                          { key: 'all', label: '全部' },
-                          { key: 'music', label: '音乐' },
-                          { key: 'movie', label: '电影' },
-                          { key: 'educational', label: '教育' },
-                          { key: 'gaming', label: '游戏' },
-                          { key: 'sports', label: '体育' },
-                          { key: 'news', label: '新闻' }
-                        ].map((type) => (
-                          <button
-                            key={type.key}
-                            onClick={() => {
-                              setYoutubeContentType(type.key as any);
-                              const currentQuery = searchQuery.trim() || searchParams?.get('q');
-                              if (currentQuery) {
-                                handleYouTubeSearch(currentQuery, type.key as any, youtubeSortOrder);
-                              }
-                            }}
-                            className={`px-3 py-1 text-sm rounded-full border transition-colors ${
-                              youtubeContentType === type.key
-                                ? 'bg-red-500 text-white border-red-500'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700'
-                            }`}
-                            disabled={youtubeLoading}
-                          >
-                            {type.label}
-                          </button>
-                        ))}
-                      </div>
-                      
-                      {/* 排序选择器 */}
-                      <div className='mt-3 flex items-center gap-3'>
-                        <span className='text-sm text-gray-600 dark:text-gray-400'>排序：</span>
-                        <div className='flex flex-wrap gap-2'>
-                          {[
-                            { key: 'relevance', label: '相关性' },
-                            { key: 'date', label: '最新发布', icon: '🕒' },
-                            { key: 'viewCount', label: '观看次数', icon: '👀' },
-                            { key: 'rating', label: '评分', icon: '⭐' },
-                            { key: 'title', label: '标题', icon: '🔤' }
-                          ].map((sort) => (
-                            <button
-                              key={sort.key}
-                              onClick={() => {
-                                setYoutubeSortOrder(sort.key as any);
-                                const currentQuery = searchQuery.trim() || searchParams?.get('q');
-                                if (currentQuery) {
-                                  handleYouTubeSearch(currentQuery, youtubeContentType, sort.key as any);
-                                }
-                              }}
-                              className={`px-2 py-1 text-xs rounded border transition-colors flex items-center gap-1 ${
-                                youtubeSortOrder === sort.key
-                                  ? 'bg-blue-500 text-white border-blue-500'
-                                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700'
-                              }`}
-                              disabled={youtubeLoading}
-                            >
-                              {sort.icon && <span>{sort.icon}</span>}
-                              <span>{sort.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* 警告信息显示 */}
-                      {youtubeWarning && (
-                        <div className='mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800'>
-                          <div className='flex items-center text-yellow-800 dark:text-yellow-200'>
-                            <svg className='w-4 h-4 mr-2' fill='currentColor' viewBox='0 0 20 20'>
-                              <path fillRule='evenodd' d='M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z' clipRule='evenodd' />
-                            </svg>
-                            <span className='text-sm'>{youtubeWarning}</span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {youtubeError ? (
-                        <div className='text-center py-8'>
-                          <div className='text-red-500 mb-2'>{youtubeError}</div>
-                          <button
-                            onClick={() => {
-                              const currentQuery = searchQuery.trim() || searchParams?.get('q');
-                              if (currentQuery) {
-                                handleYouTubeSearch(currentQuery, youtubeContentType, youtubeSortOrder);
-                              }
-                            }}
-                            className='px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors'
-                          >
-                            重试
-                          </button>
-                        </div>
-                      ) : youtubeResults && youtubeResults.length > 0 ? (
-                        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                          {youtubeResults.map((video, index) => (
-                            <YouTubeVideoCard key={video.videoId || index} video={video} />
-                          ))}
-                        </div>
-                      ) : !youtubeLoading ? (
-                        <div className='text-center text-gray-500 py-8 dark:text-gray-400'>
-                          未找到相关YouTube视频
-                        </div>
-                      ) : null}
-                    </>
-                  )}
-                </>
               ) : (
-                /* 原有的影视搜索结果 */
+                /* 默认影视搜索结果 */
                 <>
-                  {/* 标题 */}
                   <div className='mb-4'>
                     <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
                       搜索结果
@@ -1368,287 +1085,79 @@ function SearchPageClient() {
                       )}
                     </h2>
                   </div>
-              {/* 筛选器 + 开关控件 */}
-              <div className='mb-8 space-y-4'>
-                {/* 筛选器 */}
-                <div className='flex-1 min-w-0'>
-                  {viewMode === 'agg' ? (
-                    <SearchResultFilter
-                      categories={filterOptions.categoriesAgg}
-                      values={filterAgg}
-                      onChange={(v) => setFilterAgg(v as any)}
-                    />
-                  ) : (
-                    <SearchResultFilter
-                      categories={filterOptions.categoriesAll}
-                      values={filterAll}
-                      onChange={(v) => setFilterAll(v as any)}
-                    />
-                  )}
-                </div>
-                
-                {/* 开关控件行 */}
-                <div className='flex items-center justify-end gap-6'>
-                  {/* 虚拟化开关 */}
-                  <label className='flex items-center gap-3 cursor-pointer select-none shrink-0 group'>
-                    <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
-                      ⚡ 虚拟滑动
-                    </span>
-                    <div className='relative'>
-                      <input
-                        type='checkbox'
-                        className='sr-only peer'
-                        checked={useVirtualization}
-                        onChange={toggleVirtualization}
-                      />
-                      <div className='w-11 h-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-blue-400 peer-checked:to-purple-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-blue-500 dark:peer-checked:to-purple-600 shadow-inner'></div>
-                      <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-blue-300 dark:peer-checked:shadow-blue-500/50 peer-checked:scale-105'></div>
-                      {/* 开关内图标 */}
-                      <div className='absolute top-1.5 left-1.5 w-3 h-3 flex items-center justify-center pointer-events-none transition-all duration-300 peer-checked:translate-x-5'>
-                        <span className='text-[10px] peer-checked:text-white text-gray-500'>
-                          {useVirtualization ? '✨' : '○'}
-                        </span>
-                      </div>
-                    </div>
-                  </label>
 
-                  {/* 聚合开关 */}
-                  <label className='flex items-center gap-3 cursor-pointer select-none shrink-0 group'>
-                    <span className='text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors'>
-                      🔄 聚合
-                    </span>
-                    <div className='relative'>
-                      <input
-                        type='checkbox'
-                        className='sr-only peer'
-                        checked={viewMode === 'agg'}
-                        onChange={() => setViewMode(viewMode === 'agg' ? 'all' : 'agg')}
-                      />
-                      <div className='w-11 h-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full peer-checked:from-emerald-400 peer-checked:to-green-500 transition-all duration-300 dark:from-gray-600 dark:to-gray-700 dark:peer-checked:from-emerald-500 dark:peer-checked:to-green-600 shadow-inner'></div>
-                      <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 peer-checked:translate-x-5 shadow-lg peer-checked:shadow-emerald-300 dark:peer-checked:shadow-emerald-500/50 peer-checked:scale-105'></div>
-                      {/* 开关内图标 */}
-                      <div className='absolute top-1.5 left-1.5 w-3 h-3 flex items-center justify-center pointer-events-none transition-all duration-300 peer-checked:translate-x-5'>
-                        <span className='text-[10px] peer-checked:text-white text-gray-500'>
-                          {viewMode === 'agg' ? '🔗' : '○'}
-                        </span>
-                      </div>
+                  {/* 筛选器和控件 */}
+                  <div className='mb-8 space-y-4'>
+                    <div className='flex-1 min-w-0'>
+                      {viewMode === 'agg' ? (
+                        <SearchResultFilter
+                          categories={filterOptions.categoriesAgg}
+                          values={filterAgg}
+                          onChange={(v) => setFilterAgg(v as any)}
+                        />
+                      ) : (
+                        <SearchResultFilter
+                          categories={filterOptions.categoriesAll}
+                          values={filterAll}
+                          onChange={(v) => setFilterAll(v as any)}
+                        />
+                      )}
                     </div>
-                  </label>
-                </div>
-              </div>
-              {/* 条件渲染：虚拟化 vs 传统网格 */}
-              {useVirtualization ? (
-                <VirtualSearchGrid
-                  allResults={searchResults}
-                  filteredResults={filteredAllResults}
-                  aggregatedResults={aggregatedResults}
-                  filteredAggResults={filteredAggResults}
-                  viewMode={viewMode}
-                  searchQuery={searchQuery}
-                  isLoading={isLoading}
-                  groupRefs={groupRefs}
-                  groupStatsRef={groupStatsRef}
-                  getGroupRef={getGroupRef}
-                  computeGroupStats={computeGroupStats}
-                />
-              ) : (
-                // 传统网格渲染（保持原有逻辑）
-                searchResults.length === 0 ? (
-                  isLoading ? (
-                    <div className='flex justify-center items-center h-40'>
-                      <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-green-500'></div>
-                    </div>
-                  ) : (
-                    <div className='text-center text-gray-500 py-8 dark:text-gray-400'>
-                      未找到相关结果
-                    </div>
-                  )
-                ) : (
-                  <div
-                    key={`search-results-${viewMode}`}
-                    className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'
-                  >
-                    {viewMode === 'agg'
-                      ? filteredAggResults.map(([mapKey, group]) => {
-                        const title = group[0]?.title || '';
-                        const poster = group[0]?.poster || '';
-                        const year = group[0]?.year || 'unknown';
-                        const { episodes, source_names, douban_id } = computeGroupStats(group);
-                        const type = episodes === 1 ? 'movie' : 'tv';
-
-                        // 如果该聚合第一次出现，写入初始统计
-                        if (!groupStatsRef.current.has(mapKey)) {
-                          groupStatsRef.current.set(mapKey, { episodes, source_names, douban_id });
-                        }
-
-                        return (
-                          <div key={`agg-${mapKey}`} className='w-full'>
-                            <VideoCard
-                              ref={getGroupRef(mapKey)}
-                              from='search'
-                              isAggregate={true}
-                              title={title}
-                              poster={poster}
-                              year={year}
-                              episodes={episodes}
-                              source_names={source_names}
-                              douban_id={douban_id}
-                              query={
-                                searchQuery.trim() !== title
-                                  ? searchQuery.trim()
-                                  : ''
-                              }
-                              type={type}
-                            />
-                          </div>
-                        );
-                      })
-                      : filteredAllResults.map((item) => (
-                        <div
-                          key={`all-${item.source}-${item.id}`}
-                          className='w-full'
-                        >
-                          <VideoCard
-                            id={item.id}
-                            title={item.title}
-                            poster={item.poster}
-                            episodes={item.episodes.length}
-                            source={item.source}
-                            source_name={item.source_name}
-                            douban_id={item.douban_id}
-                            query={
-                              searchQuery.trim() !== item.title
-                                ? searchQuery.trim()
-                                : ''
-                            }
-                            year={item.year}
-                            from='search'
-                            type={item.episodes.length > 1 ? 'tv' : 'movie'}
-                          />
-                        </div>
-                      ))}
                   </div>
-                )
-              )}
-                </>
-              )}
-            </section>
-          ) : (
-            /* 搜索历史或YouTube无搜索状态 */
-            <>
-              {/* 搜索历史 - 优先显示 */}
-              {searchHistory.length > 0 && (
-                <section className='mb-12'>
-                  <h2 className='mb-4 text-xl font-bold text-gray-800 text-left dark:text-gray-200'>
-                    搜索历史
-                    {searchHistory.length > 0 && (
-                      <button
-                        onClick={() => {
-                          clearSearchHistory(); // 事件监听会自动更新界面
-                        }}
-                        className='ml-3 text-sm text-gray-500 hover:text-red-500 transition-colors dark:text-gray-400 dark:hover:text-red-500'
-                      >
-                        清空
-                      </button>
-                    )}
-                  </h2>
-                  <div className='flex flex-wrap gap-2'>
-                    {searchHistory.map((item) => (
-                      <div key={item} className='relative group'>
-                        <button
-                          onClick={() => {
-                            setSearchQuery(item);
-                            router.push(
-                              `/search?q=${encodeURIComponent(item.trim())}`
+
+                  {/* 搜索结果内容 */}
+                  {(viewMode === 'agg' ? filteredAggResults.length > 0 : filteredAllResults.length > 0) ? (
+                      <div className='grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
+                        {viewMode === 'agg' ? (
+                          filteredAggResults.map(([mapKey, group]) => {
+                            const title = group[0]?.title || '';
+                            const poster = group[0]?.poster || '';
+                            const year = group[0]?.year || 'unknown';
+                            const episodes = group.reduce((sum, item) => Math.max(sum, (item.episodes?.length || 1)), 1);
+                            const source_names = Array.from(new Set(group.map(item => item.source).filter(Boolean)));
+                            const douban_id = group.find(item => item.douban_id)?.douban_id;
+                            const type = episodes === 1 ? 'movie' : 'tv';
+
+                            return (
+                              <div key={`agg-${mapKey}`} className='w-full'>
+                                <VideoCard
+                                  from='search'
+                                  isAggregate={true}
+                                  title={title}
+                                  poster={poster}
+                                  year={year}
+                                  episodes={episodes}
+                                  source_names={source_names}
+                                  douban_id={douban_id}
+                                  query={
+                                    searchQuery.trim() !== title
+                                      ? searchQuery.trim()
+                                      : ''
+                                  }
+                                  type={type}
+                                />
+                              </div>
                             );
-                          }}
-                          className='px-4 py-2 bg-gray-500/10 hover:bg-gray-300 rounded-full text-sm text-gray-700 transition-colors duration-200 dark:bg-gray-700/50 dark:hover:bg-gray-600 dark:text-gray-300'
-                        >
-                          {item}
-                        </button>
-                        {/* 删除按钮 */}
-                        <button
-                          aria-label='删除搜索历史'
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            deleteSearchHistory(item); // 事件监听会自动更新界面
-                          }}
-                          className='absolute -top-1 -right-1 w-4 h-4 opacity-0 group-hover:opacity-100 bg-gray-400 hover:bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] transition-colors'
-                        >
-                          <X className='w-3 h-3' />
-                        </button>
+                          })
+                        ) : (
+                          filteredAllResults.map((result) => (
+                            <div key={result.id + result.source_name} className='w-full'>
+                              <VideoCard
+                                id={result.id}
+                                title={result.title}
+                                poster={result.poster}
+                                year={result.year}
+                                episodes={result.episodes?.length || 1}
+                                from='search'
+                                type={result.type_name}
+                                source_name={result.source_name}
+                                query={searchQuery.trim() !== result.title ? searchQuery.trim() : ''}
+                              />
+                            </div>
+                          ))
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* YouTube特殊模式显示 - 在搜索历史之后 */}
-              {searchType === 'youtube' && (
-                <section className='mb-12'>
-                  <div className='mb-4'>
-                    <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
-                      YouTube视频
-                    </h2>
-                    
-                    {/* YouTube模式切换 */}
-                    <div className='mt-3 flex items-center gap-2'>
-                      <div className='inline-flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1 space-x-1'>
-                        <button
-                          type='button'
-                          onClick={() => {
-                            setYoutubeMode('search');
-                            setYoutubeError(null);
-                            setYoutubeWarning(null);
-                          }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            youtubeMode === 'search'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                          }`}
-                        >
-                          🔍 搜索视频
-                        </button>
-                        <button
-                          type='button'
-                          onClick={() => {
-                            setYoutubeMode('direct');
-                            setYoutubeResults(null);
-                            setYoutubeError(null);
-                            setYoutubeWarning(null);
-                          }}
-                          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                            youtubeMode === 'direct'
-                              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                          }`}
-                        >
-                          🔗 直接播放
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* YouTube内容区域 */}
-                  {youtubeMode === 'direct' ? (
-                    /* 直接播放模式 */
-                    <div className='space-y-4'>
-                      <div className='bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900/20 dark:border-blue-800'>
-                        <div className='flex items-center text-blue-800 dark:text-blue-200 mb-2'>
-                          <svg className='w-5 h-5 mr-2' fill='currentColor' viewBox='0 0 20 20'>
-                            <path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z' clipRule='evenodd' />
-                          </svg>
-                          <span className='font-medium'>💡 直接播放YouTube视频</span>
-                        </div>
-                        <p className='text-blue-700 dark:text-blue-300 text-sm'>
-                          粘贴任意YouTube链接，无需搜索即可直接播放视频。支持所有常见的YouTube链接格式。
-                        </p>
-                      </div>
-                      <DirectYouTubePlayer />
-                    </div>
-                  ) : (
-                    /* 搜索模式提示 */
+                  ) : !isLoading ? (
                     <div className='text-center text-gray-500 py-8 dark:text-gray-400'>
                       <div className='mb-4'>
                         <svg className='w-16 h-16 mx-auto text-gray-300 dark:text-gray-600' fill='currentColor' viewBox='0 0 20 20'>
@@ -1656,13 +1165,35 @@ function SearchPageClient() {
                         </svg>
                       </div>
                       <p className='text-lg mb-2'>在上方搜索框输入关键词</p>
-                      <p className='text-sm'>开始搜索YouTube视频</p>
                     </div>
-                  )}
-                </section>
+                  ) : null}
+                </>
               )}
-
-            </>
+            </section>
+          ) : (
+            /* 搜索历史 */
+            <div className="p-4">
+              <h3 className="text-lg font-semibold mb-4 dark:text-white">搜索历史</h3>
+              {searchHistory.length > 0 ? (
+                <div className="space-y-2">
+                  {searchHistory.slice(0, 10).map((keyword, index) => (
+                    <button
+                      key={index}
+                      className="text-left w-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-700 dark:text-gray-300"
+                      onClick={() => {
+                        setSearchQuery(keyword);
+                        const event = new Event('submit') as any;
+                        handleSearch(event);
+                      }}
+                    >
+                      {keyword}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400">暂无搜索历史</p>
+              )}
+            </div>
           )}
         </div>
       </div>

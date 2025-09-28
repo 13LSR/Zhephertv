@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { getConfig } from '@/lib/config';
-import { TMDB_CACHE_EXPIRE, getCacheKey, getCache, setCache } from '@/lib/tmdb-cache';
+import { getCache, getCacheKey, setCache,TMDB_CACHE_EXPIRE } from '@/lib/tmdb-cache';
 
 // TMDB API 配置
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';

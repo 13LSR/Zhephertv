@@ -15,8 +15,8 @@
  */
 
 import { getAuthInfoFromBrowserCookie } from './auth';
-import { SkipConfig, UserPlayStat } from './types';
 import type { PlayRecord } from './types';
+import { SkipConfig, UserPlayStat } from './types';
 
 // 重新导出类型以保持API兼容性
 export type { PlayRecord } from './types';

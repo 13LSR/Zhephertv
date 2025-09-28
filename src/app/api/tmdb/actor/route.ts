@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getCacheTime } from '@/lib/config';
-import { searchTMDBActorWorks, isTMDBEnabled, TMDBFilterOptions } from '@/lib/tmdb.client';
 import { db } from '@/lib/db';
+import { isTMDBEnabled, searchTMDBActorWorks, TMDBFilterOptions } from '@/lib/tmdb.client';
 
 const TMDB_CACHE_TIME = 6 * 60 * 60; // 6小时
 

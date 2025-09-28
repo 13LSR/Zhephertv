@@ -267,31 +267,8 @@ export async function GET(request: NextRequest) {
         "芒果", "华数", "哔哩", "1905"
       ],
 
-      // 直播源（合并所有启用的直播源为一个，解决TVBox多源限制）
-      lives: (() => {
-        const enabledLives = (config.LiveConfig || []).filter(live => !live.disabled);
-        if (enabledLives.length === 0) return [];
-        
-        // 如果只有一个源，直接返回
-        if (enabledLives.length === 1) {
-          return enabledLives.map(live => ({
-            name: live.name,
-            type: 0,
-            url: live.url,
-            epg: live.epg || "",
-            logo: ""
-          }));
-        }
-        
-        // 多个源时，创建一个聚合源
-        return [{
-          name: "LunaTV聚合直播",
-          type: 0,
-          url: `${baseUrl}/api/live/merged`, // 新的聚合端点
-          epg: enabledLives.find(live => live.epg)?.epg || "",
-          logo: ""
-        }];
-      })(),
+      // 直播源功能已移除
+      lives: [],
 
       // 广告过滤规则
       ads: [

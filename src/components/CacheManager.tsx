@@ -1,20 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { 
-  TrashIcon, 
   ArrowPathIcon,
   ChartBarIcon,
   ClockIcon,
-  ServerIcon,
   DocumentTextIcon,
+  ExclamationTriangleIcon,
   FilmIcon,
-  MagnifyingGlassIcon,
   FolderIcon,
-  VideoCameraIcon,
   PlayIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline';
+  TrashIcon, 
+  VideoCameraIcon} from '@heroicons/react/24/outline';
+import { useEffect,useState } from 'react';
 
 interface CacheStats {
   douban: { count: number; size: number; types: Record<string, number> };

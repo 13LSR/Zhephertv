@@ -10,9 +10,6 @@ import {
   BangumiCalendarData,
   GetBangumiCalendarData,
 } from '@/lib/bangumi.client';
-import { getRecommendedShortDramas } from '@/lib/shortdrama.client';
-import { cleanExpiredCache } from '@/lib/shortdrama-cache';
-import { ShortDramaItem } from '@/lib/types';
 // 客户端收藏 API
 import {
   clearAllFavorites,
@@ -21,6 +18,9 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { getDoubanCategories } from '@/lib/douban.client';
+import { getRecommendedShortDramas } from '@/lib/shortdrama.client';
+import { cleanExpiredCache } from '@/lib/shortdrama-cache';
+import { ShortDramaItem } from '@/lib/types';
 import { DoubanItem } from '@/lib/types';
 
 import AIRecommendModal from '@/components/AIRecommendModal';
@@ -94,7 +94,7 @@ function HomeClient() {
     source_name: string;
     currentEpisode?: number;
     search_title?: string;
-    origin?: 'vod' | 'live';
+    origin?: 'vod';
   };
 
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([]);
@@ -172,8 +172,9 @@ function HomeClient() {
   const updateFavoriteItems = async (allFavorites: Record<string, any>) => {
     const allPlayRecords = await getAllPlayRecords();
 
-    // 根据保存时间排序（从近到远）
+    // 根据保存时间排序（从近到远），过滤掉live类型的收藏夹
     const sorted = Object.entries(allFavorites)
+      .filter(([, fav]) => fav?.origin !== 'live')  // 过滤掉live类型
       .sort(([, a], [, b]) => b.save_time - a.save_time)
       .map(([key, fav]) => {
         const plusIndex = key.indexOf('+');

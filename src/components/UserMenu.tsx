@@ -24,21 +24,21 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
+import {
+  type PlayRecord,
+  forceRefreshPlayRecordsCache,
+  getAllPlayRecords,
+} from '@/lib/db.client';
+import type { Favorite } from '@/lib/types';
 import { CURRENT_VERSION } from '@/lib/version';
 import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
 import {
+  type WatchingUpdate,
+  checkWatchingUpdates,
   getCachedWatchingUpdates,
   getDetailedWatchingUpdates,
   subscribeToWatchingUpdatesEvent,
-  checkWatchingUpdates,
-  type WatchingUpdate,
 } from '@/lib/watching-updates';
-import {
-  getAllPlayRecords,
-  forceRefreshPlayRecordsCache,
-  type PlayRecord,
-} from '@/lib/db.client';
-import type { Favorite } from '@/lib/types';
 
 import { VersionPanel } from './VersionPanel';
 import VideoCard from './VideoCard';

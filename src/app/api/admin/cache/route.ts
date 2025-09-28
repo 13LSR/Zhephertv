@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { ClientCache } from '@/lib/client-cache';
-import { db } from '@/lib/db';
 import { DatabaseCacheManager } from '@/lib/database-cache';
+import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
