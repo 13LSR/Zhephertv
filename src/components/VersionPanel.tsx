@@ -37,9 +37,8 @@ export const VersionPanel: React.FC<VersionPanelProps> = ({
   onClose,
 }) => {
   const [mounted, setMounted] = useState(false);
-  const [remoteChangelog, setRemoteChangelog] = useState<ChangelogEntry[]>([]);
-  const [hasUpdate, setIsHasUpdate] = useState(false);
-  const [latestVersion, setLatestVersion] = useState<string>('');
+  const [hasUpdate, setIsHasUpdate] = useState(false); // 始终为false，因为v1.0.0就是最新版本
+  const [latestVersion, setLatestVersion] = useState<string>(CURRENT_VERSION); // 设置为当前版本
   const [showRemoteContent, setShowRemoteContent] = useState(false);
 
   // 确保组件已挂载
@@ -70,42 +69,18 @@ export const VersionPanel: React.FC<VersionPanelProps> = ({
     }
   }, [isOpen]);
 
-  // 获取远程变更日志
-  useEffect(() => {
-    if (isOpen) {
-      fetchRemoteChangelog();
-    }
-  }, [isOpen]);
+  // 远程获取已禁用 - 只使用本地版本数据
+  // useEffect(() => {
+  //   if (isOpen) {
+  //     fetchRemoteChangelog();
+  //   }
+  // }, [isOpen]);
 
-  // 获取远程变更日志
+  // 已禁用远程获取 - 使用本地数据
   const fetchRemoteChangelog = async () => {
-    try {
-      const response = await fetch(
-        'https://raw.githubusercontent.com/13LSR/Zhephertv/refs/heads/main/CHANGELOG'
-      );
-      if (response.ok) {
-        const content = await response.text();
-        const parsed = parseChangelog(content);
-        setRemoteChangelog(parsed);
-
-        // 检查是否有更新
-        if (parsed.length > 0) {
-          const latest = parsed[0];
-          setLatestVersion(latest.version);
-          setIsHasUpdate(
-            compareVersions(latest.version) === UpdateStatus.HAS_UPDATE
-          );
-        }
-      } else {
-        console.error(
-          '获取远程变更日志失败:',
-          response.status,
-          response.statusText
-        );
-      }
-    } catch (error) {
-      console.error('获取远程变更日志失败:', error);
-    }
+    // 不再获取远程数据，v1.0.0就是最新版本
+    // 不设置更新提示，因为本地版本就是最新的
+    console.log('远程changelog获取已禁用，使用本地版本数据');
   };
 
   // 解析变更日志格式
