@@ -17,7 +17,7 @@ import { createPortal } from 'react-dom';
 
 import { changelog, ChangelogEntry } from '@/lib/changelog';
 import { CURRENT_VERSION } from '@/lib/version';
-import { compareVersions, UpdateStatus } from '@/lib/version_check';
+import { checkForUpdates, compareVersions, UpdateStatus } from '@/lib/version_check';
 
 interface VersionPanelProps {
   isOpen: boolean;
@@ -37,8 +37,8 @@ export const VersionPanel: React.FC<VersionPanelProps> = ({
   onClose,
 }) => {
   const [mounted, setMounted] = useState(false);
-  const [hasUpdate, setIsHasUpdate] = useState(false); // 始终为false，v1.0.0就是最新版本
-  const [latestVersion, setLatestVersion] = useState<string>(CURRENT_VERSION); // 设置为当前版本
+  const [hasUpdate, setIsHasUpdate] = useState(false); // 是否有新版本可用
+  const [latestVersion, setLatestVersion] = useState<string>(CURRENT_VERSION); // 最新版本号
   const [showRemoteContent, setShowRemoteContent] = useState(false);
 
   // 确保组件已挂载
@@ -69,18 +69,52 @@ export const VersionPanel: React.FC<VersionPanelProps> = ({
     }
   }, [isOpen]);
 
-  // 远程获取已禁用 - 只使用本地版本数据
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     fetchRemoteChangelog();
-  //   }
-  // }, [isOpen]);
+  // 当面板打开时，获取远程版本信息和changelog
+  useEffect(() => {
+    if (isOpen) {
+      fetchRemoteChangelog();
+    }
+  }, [isOpen]);
 
-  // 已禁用远程获取 - 使用本地数据
+  // 获取远程版本信息和changelog
   const fetchRemoteChangelog = async () => {
-    // 不再获取远程数据，v1.0.0就是最新版本
-    // 不设置更新提示，因为本地版本就是最新的
-    console.log('远程changelog获取已禁用，使用本地版本数据');
+    try {
+      console.log('开始检查远程版本更新...');
+
+      // 检查版本更新
+      const updateStatus = await checkForUpdates();
+      console.log('版本检查结果:', updateStatus);
+
+      if (updateStatus === UpdateStatus.HAS_UPDATE) {
+        setIsHasUpdate(true);
+        console.log('发现新版本可用!');
+      } else {
+        setIsHasUpdate(false);
+        console.log('当前已是最新版本');
+      }
+
+      // 获取远程changelog内容
+      const changelogUrl = 'https://raw.githubusercontent.com/13LSR/Zhephertv/refs/heads/main/CHANGELOG';
+      console.log('获取远程changelog:', changelogUrl);
+
+      const response = await fetch(changelogUrl + '?_t=' + Date.now(), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+      });
+
+      if (response.ok) {
+        const content = await response.text();
+        console.log('远程changelog获取成功，内容长度:', content.length);
+      } else {
+        console.warn('远程changelog获取失败:', response.status);
+      }
+
+    } catch (error) {
+      console.error('获取远程版本信息失败:', error);
+      setIsHasUpdate(false);
+    }
   };
 
   // 解析变更日志格式
