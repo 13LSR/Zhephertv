@@ -37,7 +37,7 @@ export const VersionPanel: React.FC<VersionPanelProps> = ({
   onClose,
 }) => {
   const [mounted, setMounted] = useState(false);
-  const [hasUpdate, setIsHasUpdate] = useState(false); // 始终为false，因为v1.0.0就是最新版本
+  const [hasUpdate, setIsHasUpdate] = useState(false); // 始终为false，v1.0.0就是最新版本
   const [latestVersion, setLatestVersion] = useState<string>(CURRENT_VERSION); // 设置为当前版本
   const [showRemoteContent, setShowRemoteContent] = useState(false);
 
