@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+.pnpm/
+
+# Production builds
+.next/
+out/
+dist/
+build/
+
+# PWA auto-generated files
+public/sw.js
+public/workbox-*.js
+
+# Cache directories
+.cache/
+*.tsbuildinfo
+
+# Runtime files
+.env*.local
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Auto-generated files
+*.d.ts

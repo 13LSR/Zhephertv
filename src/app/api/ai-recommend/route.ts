@@ -22,7 +22,7 @@ interface ChatRequest {
 export async function POST(request: NextRequest) {
   try {
     const authInfo = getAuthInfoFromCookie(request);
-    
+
     // 检查用户权限
     if (!authInfo || !authInfo.username) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -34,63 +34,88 @@ export async function POST(request: NextRequest) {
     const adminConfig = await getConfig();
 
     // 检查用户是否有AI推荐功能权限（传入已获取的配置避免重复调用）
-    const hasPermission = await hasSpecialFeaturePermission(username, 'ai-recommend', adminConfig);
+    const hasPermission = await hasSpecialFeaturePermission(
+      username,
+      'ai-recommend',
+      adminConfig
+    );
     if (!hasPermission) {
-      return NextResponse.json({
-        error: '您无权使用AI推荐功能，请联系管理员开通权限'
-      }, {
-        status: 403,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Expires': '0',
-          'Pragma': 'no-cache',
-          'Surrogate-Control': 'no-store'
+      return NextResponse.json(
+        {
+          error: '您无权使用AI推荐功能，请联系管理员开通权限',
+        },
+        {
+          status: 403,
+          headers: {
+            'Cache-Control':
+              'no-store, no-cache, must-revalidate, proxy-revalidate',
+            Expires: '0',
+            Pragma: 'no-cache',
+            'Surrogate-Control': 'no-store',
+          },
         }
-      });
+      );
     }
     const aiConfig = adminConfig.AIRecommendConfig;
 
     if (!aiConfig?.enabled) {
-      return NextResponse.json({
-        error: 'AI推荐功能未启用'
-      }, {
-        status: 403,
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Expires': '0',
-          'Pragma': 'no-cache',
-          'Surrogate-Control': 'no-store'
+      return NextResponse.json(
+        {
+          error: 'AI推荐功能未启用',
+        },
+        {
+          status: 403,
+          headers: {
+            'Cache-Control':
+              'no-store, no-cache, must-revalidate, proxy-revalidate',
+            Expires: '0',
+            Pragma: 'no-cache',
+            'Surrogate-Control': 'no-store',
+          },
         }
-      });
+      );
     }
 
     // 检查API配置是否完整
     if (!aiConfig.apiKey || !aiConfig.apiUrl) {
-      return NextResponse.json({ 
-        error: 'AI推荐功能配置不完整，请联系管理员' 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: 'AI推荐功能配置不完整，请联系管理员',
+        },
+        { status: 500 }
+      );
     }
 
-    const { messages, model, temperature, max_tokens, max_completion_tokens } = await request.json() as ChatRequest;
+    const { messages, model, temperature, max_tokens, max_completion_tokens } =
+      (await request.json()) as ChatRequest;
 
     // 验证请求格式
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return NextResponse.json({ 
-        error: 'Invalid messages format' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Invalid messages format',
+        },
+        { status: 400 }
+      );
     }
 
     // 优化缓存策略 - 只对简单的单轮问答进行短时缓存
     let cacheKey: string | null = null;
     let cachedResponse = null;
-    
+
     // 只有在单轮对话且消息较短时才使用缓存，避免过度缓存复杂对话
-    if (messages.length === 1 && messages[0].role === 'user' && messages[0].content.length < 50) {
-      const questionHash = Buffer.from(messages[0].content.trim().toLowerCase()).toString('base64').slice(0, 16);
+    if (
+      messages.length === 1 &&
+      messages[0].role === 'user' &&
+      messages[0].content.length < 50
+    ) {
+      const questionHash = Buffer.from(messages[0].content.trim().toLowerCase())
+        .toString('base64')
+        .slice(0, 16);
       cacheKey = `ai-recommend-simple-${questionHash}`;
       cachedResponse = await db.getCache(cacheKey);
     }
-    
+
     if (cachedResponse) {
       return NextResponse.json(cachedResponse);
     }
@@ -101,15 +126,16 @@ export async function POST(request: NextRequest) {
     const lastYear = currentYear - 1;
     const randomElements = [
       '尝试推荐一些不同类型的作品',
-      '可以包含一些经典和新作品的混合推荐', 
+      '可以包含一些经典和新作品的混合推荐',
       '考虑推荐一些口碑很好的作品',
-      '可以推荐一些最近讨论度比较高的作品'
+      '可以推荐一些最近讨论度比较高的作品',
     ];
-    const randomHint = randomElements[Math.floor(Math.random() * randomElements.length)];
-    
+    const randomHint =
+      randomElements[Math.floor(Math.random() * randomElements.length)];
+
     // 获取最后一条用户消息用于分析
     const userMessage = messages[messages.length - 1]?.content || '';
-    
+
     // YouTube链接检测功能已移除
 
     // YouTube功能已移除
@@ -119,7 +145,9 @@ export async function POST(request: NextRequest) {
     // 构建功能列表和详细说明
     const capabilities = ['影视剧推荐'];
 
-    const systemPrompt = `你是LunaTV的智能推荐助手，支持：${capabilities.join('、')}。当前日期：${currentDate}
+    const systemPrompt = `你是LunaTV的智能推荐助手，支持：${capabilities.join(
+      '、'
+    )}。当前日期：${currentDate}
 
 ## 功能状态：
 1. **影视剧推荐** ✅ 始终可用
@@ -137,7 +165,7 @@ export async function POST(request: NextRequest) {
 - ${randomHint}
 - 重点推荐${currentYear}年的最新作品
 - 可以包含${lastYear}年的热门作品
-- 避免推荐${currentYear-2}年以前的老作品，除非是经典必看
+- 避免推荐${currentYear - 2}年以前的老作品，除非是经典必看
 - 推荐内容要具体，包含作品名称、年份、类型、推荐理由
 - 每次回复尽量提供一些新的角度或不同的推荐
 - 避免推荐过于小众或难以找到的内容
@@ -155,20 +183,21 @@ export async function POST(request: NextRequest) {
     // 准备发送给OpenAI的消息
     const chatMessages: OpenAIMessage[] = [
       { role: 'system', content: systemPrompt },
-      ...messages
+      ...messages,
     ];
 
     // 使用配置中的参数或请求参数
     const requestModel = model || aiConfig.model;
     let tokenLimit = max_tokens || max_completion_tokens || aiConfig.maxTokens;
-    
+
     // 判断是否是需要使用max_completion_tokens的模型
     // o系列推理模型(o1,o3,o4等)和GPT-5系列使用max_completion_tokens
-    const useMaxCompletionTokens = requestModel.startsWith('o1') || 
-                                  requestModel.startsWith('o3') || 
-                                  requestModel.startsWith('o4') ||
-                                  requestModel.includes('gpt-5');
-    
+    const useMaxCompletionTokens =
+      requestModel.startsWith('o1') ||
+      requestModel.startsWith('o3') ||
+      requestModel.startsWith('o4') ||
+      requestModel.includes('gpt-5');
+
     // 根据搜索结果优化token限制，避免空回复
     if (useMaxCompletionTokens) {
       // 推理模型需要更高的token限制
@@ -176,7 +205,10 @@ export async function POST(request: NextRequest) {
       if (requestModel.includes('gpt-5')) {
         tokenLimit = Math.max(tokenLimit, 2000); // GPT-5最小2000 tokens
         tokenLimit = Math.min(tokenLimit, 128000); // GPT-5最大128k tokens
-      } else if (requestModel.startsWith('o3') || requestModel.startsWith('o4')) {
+      } else if (
+        requestModel.startsWith('o3') ||
+        requestModel.startsWith('o4')
+      ) {
         tokenLimit = Math.max(tokenLimit, 1500); // o3/o4最小1500 tokens
         tokenLimit = Math.min(tokenLimit, 100000); // o3/o4最大100k tokens
       } else {
@@ -189,47 +221,52 @@ export async function POST(request: NextRequest) {
         tokenLimit = Math.min(tokenLimit, 32768); // GPT-4系列最大32k tokens
       }
     }
-    
+
     const requestBody: any = {
       model: requestModel,
       messages: chatMessages,
     };
-    
+
     // 推理模型不支持某些参数
     if (!useMaxCompletionTokens) {
       requestBody.temperature = temperature ?? aiConfig.temperature;
     }
-    
+
     // 根据模型类型使用正确的token限制参数
     if (useMaxCompletionTokens) {
       requestBody.max_completion_tokens = tokenLimit;
       // 推理模型不支持这些参数
-      console.log(`使用推理模型 ${requestModel}，max_completion_tokens: ${tokenLimit}`);
+      console.log(
+        `使用推理模型 ${requestModel}，max_completion_tokens: ${tokenLimit}`
+      );
     } else {
       requestBody.max_tokens = tokenLimit;
       console.log(`使用标准模型 ${requestModel}，max_tokens: ${tokenLimit}`);
     }
 
     // 调用AI API
-    const openaiResponse = await fetch(aiConfig.apiUrl.endsWith('/chat/completions') 
-      ? aiConfig.apiUrl 
-      : `${aiConfig.apiUrl.replace(/\/$/, '')}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${aiConfig.apiKey}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
+    const openaiResponse = await fetch(
+      aiConfig.apiUrl.endsWith('/chat/completions')
+        ? aiConfig.apiUrl
+        : `${aiConfig.apiUrl.replace(/\/$/, '')}/chat/completions`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${aiConfig.apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
 
     if (!openaiResponse.ok) {
       const errorData = await openaiResponse.text();
       console.error('OpenAI API Error:', errorData);
-      
+
       // 提供更详细的错误信息
       let errorMessage = 'AI服务暂时不可用，请稍后重试';
       let errorDetails = '';
-      
+
       try {
         const parsedError = JSON.parse(errorData);
         if (parsedError.error?.message) {
@@ -238,7 +275,7 @@ export async function POST(request: NextRequest) {
       } catch {
         errorDetails = errorData.substring(0, 200); // 限制错误信息长度
       }
-      
+
       // 根据HTTP状态码提供更具体的错误信息
       if (openaiResponse.status === 401) {
         errorMessage = 'API密钥无效，请联系管理员检查配置';
@@ -249,29 +286,42 @@ export async function POST(request: NextRequest) {
       } else if (openaiResponse.status >= 500) {
         errorMessage = 'AI服务器错误，请稍后重试';
       }
-      
-      return NextResponse.json({ 
-        error: errorMessage,
-        details: errorDetails,
-        status: openaiResponse.status
-      }, { status: 500 });
+
+      return NextResponse.json(
+        {
+          error: errorMessage,
+          details: errorDetails,
+          status: openaiResponse.status,
+        },
+        { status: 500 }
+      );
     }
 
     const aiResult = await openaiResponse.json();
-    
+
     // 检查AI响应的完整性
-    if (!aiResult.choices || aiResult.choices.length === 0 || !aiResult.choices[0].message) {
+    if (
+      !aiResult.choices ||
+      aiResult.choices.length === 0 ||
+      !aiResult.choices[0].message
+    ) {
       console.error('AI响应格式异常:', aiResult);
-      return NextResponse.json({ 
-        error: 'AI服务响应格式异常，请稍后重试',
-        details: `响应结构异常: ${JSON.stringify(aiResult).substring(0, 200)}...`
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: 'AI服务响应格式异常，请稍后重试',
+          details: `响应结构异常: ${JSON.stringify(aiResult).substring(
+            0,
+            200
+          )}...`,
+        },
+        { status: 500 }
+      );
     }
-    
+
     const aiContent = aiResult.choices[0].message.content;
-    
+
     // YouTube视频链接解析功能已移除
-    
+
     // 检查内容是否为空
     if (!aiContent || aiContent.trim() === '') {
       console.error('AI返回空内容:', {
@@ -279,12 +329,12 @@ export async function POST(request: NextRequest) {
         tokenLimit,
         useMaxCompletionTokens,
         choices: aiResult.choices,
-        usage: aiResult.usage
+        usage: aiResult.usage,
       });
-      
+
       let errorMessage = 'AI返回了空回复';
       let errorDetails = '';
-      
+
       if (useMaxCompletionTokens) {
         // 推理模型特殊处理
         if (tokenLimit < 1000) {
@@ -300,46 +350,52 @@ export async function POST(request: NextRequest) {
           errorMessage = 'Token限制过低导致空回复';
           errorDetails = `当前设置：${tokenLimit} tokens，建议至少500+ tokens。请在管理后台调整maxTokens参数。`;
         } else {
-          errorDetails = '建议：请尝试更详细地描述您想要的影视类型或心情，或联系管理员检查AI配置';
+          errorDetails =
+            '建议：请尝试更详细地描述您想要的影视类型或心情，或联系管理员检查AI配置';
         }
       }
-      
-      return NextResponse.json({ 
-        error: errorMessage,
-        details: errorDetails,
-        modelInfo: {
-          model: requestModel,
-          tokenLimit,
-          isReasoningModel: useMaxCompletionTokens
-        }
-      }, { status: 500 });
+
+      return NextResponse.json(
+        {
+          error: errorMessage,
+          details: errorDetails,
+          modelInfo: {
+            model: requestModel,
+            tokenLimit,
+            isReasoningModel: useMaxCompletionTokens,
+          },
+        },
+        { status: 500 }
+      );
     }
-    
+
     // YouTube推荐功能已移除
-    
+
     // 提取结构化推荐信息
     const recommendations = extractRecommendations(aiContent);
-    
+
     // 构建返回格式
     const response = {
       id: aiResult.id || `chatcmpl-${Date.now()}`,
       object: 'chat.completion',
       created: aiResult.created || Math.floor(Date.now() / 1000),
       model: aiResult.model || requestBody.model,
-      choices: aiResult.choices || [{
-        index: 0,
-        message: {
-          role: 'assistant',
-          content: aiContent
+      choices: aiResult.choices || [
+        {
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: aiContent,
+          },
+          finish_reason: aiResult.choices?.[0]?.finish_reason || 'stop',
         },
-        finish_reason: aiResult.choices?.[0]?.finish_reason || 'stop'
-      }],
+      ],
       usage: aiResult.usage || {
         prompt_tokens: 0,
         completion_tokens: 0,
-        total_tokens: 0
+        total_tokens: 0,
       },
-      recommendations: recommendations // 添加结构化推荐数据
+      recommendations: recommendations, // 添加结构化推荐数据
     };
 
     // 缓存结果（只对简单问题进行短时缓存，15分钟）
@@ -350,14 +406,14 @@ export async function POST(request: NextRequest) {
     // 记录用户AI推荐历史（可选）
     try {
       const historyKey = `ai-recommend-history-${username}`;
-      const existingHistory = await db.getCache(historyKey) || [];
+      const existingHistory = (await db.getCache(historyKey)) || [];
       const newHistory = [
         {
           timestamp: new Date().toISOString(),
           messages: messages.slice(-1), // 只保存用户最后一条消息
-          response: response.choices[0].message.content
+          response: response.choices[0].message.content,
         },
-        ...existingHistory.slice(0, 9) // 保留最近10条记录
+        ...existingHistory.slice(0, 9), // 保留最近10条记录
       ];
       await db.setCache(historyKey, newHistory, 7 * 24 * 3600); // 缓存一周
     } catch (error) {
@@ -365,14 +421,13 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(response);
-
   } catch (error) {
     console.error('AI推荐API错误:', error);
-    
+
     // 提供更详细的错误信息
     let errorMessage = '服务器内部错误';
     let errorDetails = '';
-    
+
     if (error instanceof Error) {
       if (error.message.includes('fetch')) {
         errorMessage = '无法连接到AI服务，请检查网络连接';
@@ -387,11 +442,14 @@ export async function POST(request: NextRequest) {
         errorDetails = error.message;
       }
     }
-    
-    return NextResponse.json({ 
-      error: errorMessage,
-      details: errorDetails
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        error: errorMessage,
+        details: errorDetails,
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -399,132 +457,28 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const authInfo = getAuthInfoFromCookie(request);
-    
+
     if (!authInfo || !authInfo.username) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const username = authInfo.username;
     const historyKey = `ai-recommend-history-${username}`;
-    const history = await db.getCache(historyKey) || [];
+    const history = (await db.getCache(historyKey)) || [];
 
     return NextResponse.json({
       history: history,
-      total: history.length
+      total: history.length,
     });
-
   } catch (error) {
     console.error('获取AI推荐历史错误:', error);
-    return NextResponse.json({ 
-      error: '获取历史记录失败' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: '获取历史记录失败',
+      },
+      { status: 500 }
+    );
   }
-}
-
-// 视频链接解析处理函数
-async function handleVideoLinkParsing(videoLinks: any[]) {
-  const parsedVideos = [];
-  
-  for (const link of videoLinks) {
-    try {
-      // 使用YouTube oEmbed API获取视频信息（公开，无需API Key）
-      const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${link.videoId}&format=json`);
-      
-      if (response.ok) {
-        const videoInfo = await response.json();
-        parsedVideos.push({
-          videoId: link.videoId,
-          originalUrl: link.originalUrl,
-          title: videoInfo?.title || '直接播放的YouTube视频',
-          channelName: videoInfo?.author_name || '未知频道',
-          thumbnail: `https://img.youtube.com/vi/${link.videoId}/mqdefault.jpg`,
-          playable: true,
-          embedUrl: `https://www.youtube.com/embed/${link.videoId}?autoplay=1&rel=0`
-        });
-      } else {
-        // 即使oEmbed失败，也提供基本信息
-        parsedVideos.push({
-          videoId: link.videoId,
-          originalUrl: link.originalUrl,
-          title: '直接播放的YouTube视频',
-          channelName: '未知频道',
-          thumbnail: `https://img.youtube.com/vi/${link.videoId}/mqdefault.jpg`,
-          playable: true,
-          embedUrl: `https://www.youtube.com/embed/${link.videoId}?autoplay=1&rel=0`
-        });
-      }
-    } catch (error) {
-      console.error(`解析视频 ${link.videoId} 失败:`, error);
-      parsedVideos.push({
-        videoId: link.videoId,
-        originalUrl: link.originalUrl,
-        title: '解析失败的视频',
-        error: '无法获取视频信息',
-        playable: false
-      });
-    }
-  }
-  
-  return parsedVideos;
-}
-
-// 从AI回复中提取YouTube搜索关键词（参考alpha逻辑）
-function extractYouTubeSearchKeywords(content: string): string[] {
-  const keywords: string[] = [];
-  const videoPattern = /【([^】]+)】/g;
-  let match;
-
-  while ((match = videoPattern.exec(content)) !== null && keywords.length < 4) {
-    keywords.push(match[1].trim());
-  }
-
-  return keywords;
-}
-
-// YouTube视频搜索函数（仅支持真实API）
-async function searchYouTubeVideos(keywords: string[], youtubeConfig: any) {
-  const videos = [];
-
-  // 检查API Key
-  if (!youtubeConfig.apiKey) {
-    throw new Error('YouTube API Key未配置');
-  }
-
-  // 使用真实YouTube API
-  for (const keyword of keywords) {
-    if (videos.length >= 4) break;
-
-    try {
-      const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
-      searchUrl.searchParams.set('key', youtubeConfig.apiKey);
-      searchUrl.searchParams.set('q', keyword);
-      searchUrl.searchParams.set('part', 'snippet');
-      searchUrl.searchParams.set('type', 'video');
-      searchUrl.searchParams.set('maxResults', '1');
-      searchUrl.searchParams.set('order', 'relevance');
-
-      const response = await fetch(searchUrl.toString());
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.items && data.items.length > 0) {
-          const video = data.items[0];
-          videos.push({
-            id: video.id.videoId,
-            title: video.snippet.title,
-            description: video.snippet.description,
-            thumbnail: video.snippet.thumbnails?.medium?.url || video.snippet.thumbnails?.default?.url,
-            channelTitle: video.snippet.channelTitle,
-            publishedAt: video.snippet.publishedAt
-          });
-        }
-      }
-    } catch (error) {
-      console.error(`搜索关键词 "${keyword}" 失败:`, error);
-    }
-  }
-
-  return videos;
 }
 
 // 从AI回复中提取推荐信息的辅助函数

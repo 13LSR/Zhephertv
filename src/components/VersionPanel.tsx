@@ -17,7 +17,7 @@ import { createPortal } from 'react-dom';
 
 import { changelog, ChangelogEntry } from '@/lib/changelog';
 import { CURRENT_VERSION } from '@/lib/version';
-import { checkForUpdates, compareVersions, UpdateStatus } from '@/lib/version_check';
+import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
 
 interface VersionPanelProps {
   isOpen: boolean;
@@ -40,6 +40,9 @@ export const VersionPanel: React.FC<VersionPanelProps> = ({
   const [hasUpdate, setIsHasUpdate] = useState(false); // 是否有新版本可用
   const [latestVersion, setLatestVersion] = useState<string>(CURRENT_VERSION); // 最新版本号
   const [showRemoteContent, setShowRemoteContent] = useState(false);
+  const [remoteChangelog, setRemoteChangelog] = useState<
+    RemoteChangelogEntry[]
+  >([]);
 
   // 确保组件已挂载
   useEffect(() => {
@@ -94,7 +97,8 @@ export const VersionPanel: React.FC<VersionPanelProps> = ({
       }
 
       // 获取远程changelog内容
-      const changelogUrl = 'https://raw.githubusercontent.com/13LSR/Zhephertv/refs/heads/main/CHANGELOG';
+      const changelogUrl =
+        'https://raw.githubusercontent.com/13LSR/Zhephertv/refs/heads/main/CHANGELOG';
       console.log('获取远程changelog:', changelogUrl);
 
       const response = await fetch(changelogUrl + '?_t=' + Date.now(), {
@@ -107,13 +111,23 @@ export const VersionPanel: React.FC<VersionPanelProps> = ({
       if (response.ok) {
         const content = await response.text();
         console.log('远程changelog获取成功，内容长度:', content.length);
+
+        // 解析远程变更日志并存储
+        const parsedChangelog = parseChangelog(content);
+        setRemoteChangelog(parsedChangelog);
+
+        // 获取最新版本号
+        if (parsedChangelog.length > 0) {
+          setLatestVersion(parsedChangelog[0].version);
+        }
       } else {
         console.warn('远程changelog获取失败:', response.status);
+        setRemoteChangelog([]);
       }
-
     } catch (error) {
       console.error('获取远程版本信息失败:', error);
       setIsHasUpdate(false);
+      setRemoteChangelog([]);
     }
   };
 
@@ -196,12 +210,13 @@ export const VersionPanel: React.FC<VersionPanelProps> = ({
     return (
       <div
         key={entry.version}
-        className={`p-4 rounded-lg border ${isCurrentVersion
-          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-          : isUpdate
+        className={`p-4 rounded-lg border ${
+          isCurrentVersion
+            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+            : isUpdate
             ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
             : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700'
-          }`}
+        }`}
       >
         {/* 版本标题 */}
         <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3'>
@@ -453,10 +468,11 @@ export const VersionPanel: React.FC<VersionPanelProps> = ({
                       .map((entry, index) => (
                         <div
                           key={index}
-                          className={`p-4 rounded-lg border ${entry.version === latestVersion
-                            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-                            : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700'
-                            }`}
+                          className={`p-4 rounded-lg border ${
+                            entry.version === latestVersion
+                              ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                              : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700'
+                          }`}
                         >
                           <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3'>
                             <div className='flex flex-wrap items-center gap-2'>
