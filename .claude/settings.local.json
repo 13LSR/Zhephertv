@@ -4,7 +4,10 @@
       "Bash(node:*)",
       "Bash(pnpm build:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(rm:*)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint:*)"
     ],
     "deny": [],
     "ask": []

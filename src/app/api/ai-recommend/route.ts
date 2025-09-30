@@ -137,12 +137,6 @@ export async function POST(request: NextRequest) {
     // 获取最后一条用户消息用于分析
     const userMessage = messages[messages.length - 1]?.content || '';
 
-    // YouTube链接检测功能已移除
-
-    // YouTube功能已移除
-
-    // YouTube功能已移除
-
     // 构建功能列表和详细说明
     const capabilities = ['影视剧推荐'];
 
@@ -321,8 +315,6 @@ export async function POST(request: NextRequest) {
 
     const aiContent = aiResult.choices[0].message.content;
 
-    // YouTube视频链接解析功能已移除
-
     // 检查内容是否为空
     if (!aiContent || aiContent.trim() === '') {
       console.error('AI返回空内容:', {
@@ -369,8 +361,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-
-    // YouTube推荐功能已移除
 
     // 提取结构化推荐信息
     const recommendations = extractRecommendations(aiContent);

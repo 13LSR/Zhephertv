@@ -33,7 +33,6 @@ export interface AIChatResponse {
     total_tokens: number;
   };
   recommendations?: MovieRecommendation[];
-  videoLinks?: any[];
   type?: string;
 }
 
@@ -55,21 +54,23 @@ export async function sendAIRecommendMessage(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      messages: messages.map(msg => ({
+      messages: messages.map((msg) => ({
         role: msg.role,
-        content: msg.content
-      }))
+        content: msg.content,
+      })),
     }),
   });
 
   if (!response.ok) {
     const errorData = await response.json();
     // 将完整错误信息作为JSON字符串抛出，以便前端解析
-    throw new Error(JSON.stringify({
-      error: errorData.error || 'AI推荐请求失败',
-      details: errorData.details,
-      status: errorData.status || response.status
-    }));
+    throw new Error(
+      JSON.stringify({
+        error: errorData.error || 'AI推荐请求失败',
+        details: errorData.details,
+        status: errorData.status || response.status,
+      })
+    );
   }
 
   return response.json();
@@ -108,7 +109,7 @@ export async function checkAIRecommendAvailable(): Promise<boolean> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        messages: [{ role: 'user', content: '测试' }]
+        messages: [{ role: 'user', content: '测试' }],
       }),
     });
 
@@ -135,36 +136,36 @@ export async function checkAIRecommendAvailable(): Promise<boolean> {
 export const AI_RECOMMEND_PRESETS = [
   {
     title: '🎬 推荐热门电影',
-    message: '请推荐几部最近的热门电影，包括不同类型的，请直接列出片名'
+    message: '请推荐几部最近的热门电影，包括不同类型的，请直接列出片名',
   },
   {
     title: '📺 推荐电视剧',
-    message: '推荐一些口碑很好的电视剧，最好是最近几年的，请直接列出剧名'
+    message: '推荐一些口碑很好的电视剧，最好是最近几年的，请直接列出剧名',
   },
   {
     title: '😂 推荐喜剧片',
-    message: '推荐几部搞笑的喜剧电影，能让人开心的那种，请直接列出片名'
+    message: '推荐几部搞笑的喜剧电影，能让人开心的那种，请直接列出片名',
   },
   {
     title: '🔥 推荐动作片',
-    message: '推荐一些精彩的动作电影，场面要刺激的，请直接列出片名'
+    message: '推荐一些精彩的动作电影，场面要刺激的，请直接列出片名',
   },
   {
     title: '💕 推荐爱情片',
-    message: '推荐几部经典的爱情电影，要感人的，请直接列出片名'
+    message: '推荐几部经典的爱情电影，要感人的，请直接列出片名',
   },
   {
     title: '🔍 推荐悬疑片',
-    message: '推荐一些烧脑的悬疑推理电影，请直接列出片名'
+    message: '推荐一些烧脑的悬疑推理电影，请直接列出片名',
   },
   {
     title: '🌟 推荐经典老片',
-    message: '推荐一些经典的老电影，值得收藏的那种，请直接列出片名'
+    message: '推荐一些经典的老电影，值得收藏的那种，请直接列出片名',
   },
   {
     title: '🎭 推荐综艺节目',
-    message: '推荐一些好看的综艺节目，要有趣的，请直接列出节目名'
-  }
+    message: '推荐一些好看的综艺节目，要有趣的，请直接列出节目名',
+  },
 ];
 
 /**
@@ -188,15 +189,19 @@ const MOVIE_TITLE_PATTERNS = [
  */
 export function extractMovieTitles(content: string): string[] {
   const titles = new Set<string>();
-  
-  MOVIE_TITLE_PATTERNS.forEach(pattern => {
+
+  MOVIE_TITLE_PATTERNS.forEach((pattern) => {
     let match;
     const globalPattern = new RegExp(pattern.source, pattern.flags);
     while ((match = globalPattern.exec(content)) !== null) {
       const title = match[1]?.trim();
       if (title && title.length > 1 && title.length < 50) {
         // 过滤掉一些非影视作品的内容
-        if (!title.match(/^(推荐|电影|电视剧|综艺|动漫|年|导演|主演|类型|简介|评分)$/)) {
+        if (
+          !title.match(
+            /^(推荐|电影|电视剧|综艺|动漫|年|导演|主演|类型|简介|评分)$/
+          )
+        ) {
           titles.add(title);
         }
       }
@@ -204,7 +209,7 @@ export function extractMovieTitles(content: string): string[] {
       if (!pattern.global) break;
     }
   });
-  
+
   return Array.from(titles);
 }
 
@@ -216,55 +221,73 @@ export function formatAIResponseWithLinks(
   _onTitleClick?: (title: string) => void
 ): string {
   let formatted = content;
-  
+
   // 提取所有影视作品名称
   const titles = extractMovieTitles(content);
-  
+
   // 只添加视觉样式，不添加点击功能（点击功能由右侧卡片提供）
-  titles.forEach(title => {
+  titles.forEach((title) => {
     // 替换《片名》格式 - 只添加样式，不添加点击
     formatted = formatted.replace(
       new RegExp(`《${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}》`, 'g'),
       `<span class="text-blue-600 dark:text-blue-400 font-medium">《${title}》</span>`
     );
-    
+
     // 替换"片名"格式
     formatted = formatted.replace(
       new RegExp(`"${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'g'),
       `<span class="text-blue-600 dark:text-blue-400 font-medium">"${title}"</span>`
     );
-    
+
     // 替换【片名】格式
     formatted = formatted.replace(
       new RegExp(`【${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}】`, 'g'),
       `<span class="text-blue-600 dark:text-blue-400 font-medium">【${title}】</span>`
     );
   });
-  
+
   // 处理其他markdown格式
   // 处理标题
-  formatted = formatted.replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h3>');
-  formatted = formatted.replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h2>');
-  formatted = formatted.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h1>');
-  
+  formatted = formatted.replace(
+    /^### (.*$)/gim,
+    '<h3 class="text-lg font-semibold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h3>'
+  );
+  formatted = formatted.replace(
+    /^## (.*$)/gim,
+    '<h2 class="text-xl font-semibold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h2>'
+  );
+  formatted = formatted.replace(
+    /^# (.*$)/gim,
+    '<h1 class="text-2xl font-bold mt-4 mb-2 text-gray-900 dark:text-gray-100">$1</h1>'
+  );
+
   // 处理粗体
-  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-900 dark:text-gray-100">$1</strong>');
-  
+  formatted = formatted.replace(
+    /\*\*(.*?)\*\*/g,
+    '<strong class="font-semibold text-gray-900 dark:text-gray-100">$1</strong>'
+  );
+
   // 处理数字列表 - 先匹配整行包括换行符
-  formatted = formatted.replace(/^\d+[.、]\s*(.*?)(?=\n|$)/gim, '<div class="ml-4 text-gray-800 dark:text-gray-200">• $1</div>');
-  
+  formatted = formatted.replace(
+    /^\d+[.、]\s*(.*?)(?=\n|$)/gim,
+    '<div class="ml-4 text-gray-800 dark:text-gray-200">• $1</div>'
+  );
+
   // 处理普通列表 - 先匹配整行包括换行符
-  formatted = formatted.replace(/^[-•]\s*(.*?)(?=\n|$)/gim, '<div class="ml-4 text-gray-800 dark:text-gray-200">• $1</div>');
-  
+  formatted = formatted.replace(
+    /^[-•]\s*(.*?)(?=\n|$)/gim,
+    '<div class="ml-4 text-gray-800 dark:text-gray-200">• $1</div>'
+  );
+
   // 清理列表项之间多余的换行符
   formatted = formatted.replace(/(<\/div>)\n+(?=<div class="ml-4)/g, '$1');
-  
+
   // 处理段落分隔
   formatted = formatted.replace(/\n\n+/g, '<br><br>');
-  
+
   // 处理剩余的单换行
   formatted = formatted.replace(/\n/g, '<br>');
-  
+
   return formatted;
 }
 
@@ -290,24 +313,26 @@ export function addMovieTitleClickListeners(
   if (existingHandler) {
     element.removeEventListener('click', existingHandler);
   }
-  
+
   // 创建新的事件处理器
   const handleClick = (e: Event) => {
     const target = e.target as HTMLElement;
-    
+
     // 查找最近的具有movie-title类的元素
-    const movieTitleEl = target.closest('.movie-title[data-title]') as HTMLElement;
+    const movieTitleEl = target.closest(
+      '.movie-title[data-title]'
+    ) as HTMLElement;
     if (movieTitleEl) {
       e.preventDefault();
       e.stopPropagation();
-      
+
       const title = movieTitleEl.getAttribute('data-title');
       if (title) {
         onTitleClick(title);
       }
     }
   };
-  
+
   // 存储并添加新的监听器
   elementHandlers.set(element, handleClick);
   element.addEventListener('click', handleClick);
@@ -317,14 +342,14 @@ export function addMovieTitleClickListeners(
  * 生成对话摘要
  */
 export function generateChatSummary(messages: AIMessage[]): string {
-  const userMessages = messages.filter(msg => msg.role === 'user');
+  const userMessages = messages.filter((msg) => msg.role === 'user');
   if (userMessages.length === 0) return '新对话';
-  
+
   const firstUserMessage = userMessages[0].content;
   if (firstUserMessage.length <= 20) {
     return firstUserMessage;
   }
-  
+
   return firstUserMessage.substring(0, 17) + '...';
 }
 
@@ -333,13 +358,33 @@ export function generateChatSummary(messages: AIMessage[]): string {
  */
 export function isRecommendationRelated(message: string): boolean {
   const keywords = [
-    '推荐', '电影', '电视剧', '综艺', '动漫', '纪录片',
-    '好看', '有趣', '值得', '经典', '热门', '口碑',
-    '喜剧', '爱情', '动作', '悬疑', '科幻', '恐怖',
-    '剧情', '战争', '历史', '犯罪', '冒险', '奇幻'
+    '推荐',
+    '电影',
+    '电视剧',
+    '综艺',
+    '动漫',
+    '纪录片',
+    '好看',
+    '有趣',
+    '值得',
+    '经典',
+    '热门',
+    '口碑',
+    '喜剧',
+    '爱情',
+    '动作',
+    '悬疑',
+    '科幻',
+    '恐怖',
+    '剧情',
+    '战争',
+    '历史',
+    '犯罪',
+    '冒险',
+    '奇幻',
   ];
-  
-  return keywords.some(keyword => message.includes(keyword));
+
+  return keywords.some((keyword) => message.includes(keyword));
 }
 
 /**
