@@ -5,6 +5,7 @@ import { getAvailableApiSites } from '@/lib/config';
 import { getDetailFromApi } from '@/lib/downstream';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const authInfo = getAuthInfoFromCookie(request);

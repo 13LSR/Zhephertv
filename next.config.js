@@ -12,7 +12,18 @@ const nextConfig = {
 
   experimental: {
     instrumentationHook: process.env.NODE_ENV === 'production',
+    // 禁用 outputFileTracingIncludes 来避免 Windows symlink 问题
+    outputFileTracingIncludes: {},
   },
+
+  // 在 Windows 上禁用 symlink 以避免权限问题
+  ...(process.platform === 'win32' && {
+    experimental: {
+      instrumentationHook: process.env.NODE_ENV === 'production',
+      outputFileTracingIgnores: ['**/*'],
+      outputFileTracingIncludes: {},
+    },
+  }),
 
   // Uncoment to add domain whitelist
   images: {

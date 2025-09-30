@@ -10,6 +10,7 @@ import { db } from '@/lib/db';
 import { CURRENT_VERSION } from '@/lib/version';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const gzipAsync = promisify(gzip);
 

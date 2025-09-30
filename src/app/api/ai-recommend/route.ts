@@ -5,6 +5,7 @@ import { getConfig, hasSpecialFeaturePermission } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 interface OpenAIMessage {
   role: 'user' | 'assistant' | 'system';

@@ -6,6 +6,7 @@ import { getFilters,getReleaseCalendar } from '@/lib/release-calendar-scraper';
 import { ReleaseCalendarResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 // 缓存管理
 let cacheData: ReleaseCalendarResult | null = null;

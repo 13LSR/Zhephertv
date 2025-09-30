@@ -26,3 +26,6 @@ coverage/
 
 # Auto-generated files
 *.d.ts
+
+# Scripts directory - allow more lenient rules
+scripts/

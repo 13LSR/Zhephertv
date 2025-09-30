@@ -5,6 +5,7 @@ import { DatabaseCacheManager } from '@/lib/database-cache';
 import { db } from '@/lib/db';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 // 缓存统计接口
 export async function GET(request: NextRequest) {

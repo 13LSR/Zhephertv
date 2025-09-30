@@ -8,6 +8,7 @@ import { db } from '@/lib/db';
 import { Favorite } from '@/lib/types';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/favorites
