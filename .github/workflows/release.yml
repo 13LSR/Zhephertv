@@ -84,7 +84,9 @@ jobs:
           else
             git add VERSION.txt src/lib/version.ts src/lib/changelog.ts
             git commit -m "chore: bump version to ${{ steps.get_version.outputs.version }} [skip ci]"
-            git push origin HEAD:${GITHUB_REF#refs/heads/}
+
+            # 推送到默认分支(main)
+            git push origin HEAD:main
           fi
 
       - name: Create GitHub Release
