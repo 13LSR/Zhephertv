@@ -17,7 +17,10 @@
       "mcp__Playwright__browser_snapshot",
       "mcp__Playwright__browser_click",
       "mcp__Playwright__browser_wait_for",
-      "Read(//d/byzxj/R/program/git/1/**)"
+      "Read(//d/byzxj/R/program/git/1/**)",
+      "mcp__Playwright__browser_press_key",
+      "mcp__Playwright__browser_evaluate",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

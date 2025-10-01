@@ -3,10 +3,18 @@
 
 import { ChevronUp, Search, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { startTransition, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  startTransition,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   addSearchHistory,
+  clearAllSearchHistory,
   getSearchHistory,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
@@ -14,7 +22,9 @@ import { SearchResult } from '@/lib/types';
 
 import NetDiskSearchResults from '@/components/NetDiskSearchResults';
 import PageLayout from '@/components/PageLayout';
-import SearchResultFilter, { SearchFilterCategory } from '@/components/SearchResultFilter';
+import SearchResultFilter, {
+  SearchFilterCategory,
+} from '@/components/SearchResultFilter';
 import SearchSuggestions from '@/components/SearchSuggestions';
 import TMDBFilterPanel, { TMDBFilterState } from '@/components/TMDBFilterPanel';
 import VideoCard, { VideoCardHandle } from '@/components/VideoCard';
@@ -49,14 +59,17 @@ function SearchPageClient() {
   });
 
   // 搜索类型状态
-  const [searchType, setSearchType] = useState<'video' | 'netdisk' | 'tmdb-actor'>('video');
+  const [searchType, setSearchType] = useState<
+    'video' | 'netdisk' | 'tmdb-actor'
+  >('video');
 
   // 网盘搜索相关状态
-  const [netdiskResults, setNetdiskResults] = useState<{ [key: string]: any[] } | null>(null);
+  const [netdiskResults, setNetdiskResults] = useState<{
+    [key: string]: any[];
+  } | null>(null);
   const [netdiskLoading, setNetdiskLoading] = useState(false);
   const [netdiskError, setNetdiskError] = useState<string | null>(null);
   const [netdiskTotal, setNetdiskTotal] = useState(0);
-  
 
   // TMDB演员搜索相关状态
   const [tmdbActorResults, setTmdbActorResults] = useState<any[] | null>(null);
@@ -79,14 +92,21 @@ function SearchPageClient() {
     onlyRated: false,
     sortBy: 'popularity',
     sortOrder: 'desc',
-    limit: undefined // 移除默认限制，显示所有结果
+    limit: undefined, // 移除默认限制，显示所有结果
   });
 
   // TMDB筛选面板显示状态
   const [tmdbFilterVisible, setTmdbFilterVisible] = useState(false);
   // 聚合卡片 refs 与聚合统计缓存
-  const groupRefs = useRef<Map<string, React.RefObject<VideoCardHandle>>>(new Map());
-  const groupStatsRef = useRef<Map<string, { douban_id?: number; episodes?: number; source_names: string[] }>>(new Map());
+  const groupRefs = useRef<Map<string, React.RefObject<VideoCardHandle>>>(
+    new Map()
+  );
+  const groupStatsRef = useRef<
+    Map<
+      string,
+      { douban_id?: number; episodes?: number; source_names: string[] }
+    >
+  >(new Map());
 
   const getGroupRef = (key: string) => {
     let ref = groupRefs.current.get(key);
@@ -107,11 +127,16 @@ function SearchPageClient() {
       let max = 0;
       let res = 0;
       countMap.forEach((v, k) => {
-        if (v > max) { max = v; res = k; }
+        if (v > max) {
+          max = v;
+          res = k;
+        }
       });
       return res;
     })();
-    const source_names = Array.from(new Set(group.map((g) => g.source_name).filter(Boolean))) as string[];
+    const source_names = Array.from(
+      new Set(group.map((g) => g.source_name).filter(Boolean))
+    ) as string[];
 
     const douban_id = (() => {
       const countMap = new Map<number, number>();
@@ -123,7 +148,10 @@ function SearchPageClient() {
       let max = 0;
       let res: number | undefined;
       countMap.forEach((v, k) => {
-        if (v > max) { max = v; res = k; }
+        if (v > max) {
+          max = v;
+          res = k;
+        }
       });
       return res;
     })();
@@ -131,13 +159,23 @@ function SearchPageClient() {
     return { episodes, source_names, douban_id };
   };
   // 过滤器：非聚合与聚合
-  const [filterAll, setFilterAll] = useState<{ source: string; title: string; year: string; yearOrder: 'none' | 'asc' | 'desc' }>({
+  const [filterAll, setFilterAll] = useState<{
+    source: string;
+    title: string;
+    year: string;
+    yearOrder: 'none' | 'asc' | 'desc';
+  }>({
     source: 'all',
     title: 'all',
     year: 'all',
     yearOrder: 'none',
   });
-  const [filterAgg, setFilterAgg] = useState<{ source: string; title: string; year: string; yearOrder: 'none' | 'asc' | 'desc' }>({
+  const [filterAgg, setFilterAgg] = useState<{
+    source: string;
+    title: string;
+    year: string;
+    yearOrder: 'none' | 'asc' | 'desc';
+  }>({
     source: 'all',
     title: 'all',
     year: 'all',
@@ -189,7 +227,11 @@ function SearchPageClient() {
   };
 
   // 简化的年份排序：unknown/空值始终在最后
-  const compareYear = (aYear: string, bYear: string, order: 'none' | 'asc' | 'desc') => {
+  const compareYear = (
+    aYear: string,
+    bYear: string,
+    order: 'none' | 'asc' | 'desc'
+  ) => {
     // 如果是无排序状态，返回0（保持原顺序）
     if (order === 'none') return 0;
 
@@ -215,8 +257,9 @@ function SearchPageClient() {
 
     searchResults.forEach((item) => {
       // 使用 title + year + type 作为键，year 必然存在，但依然兜底 'unknown'
-      const key = `${item.title.replaceAll(' ', '')}-${item.year || 'unknown'
-        }-${item.episodes.length === 1 ? 'movie' : 'tv'}`;
+      const key = `${item.title.replaceAll(' ', '')}-${
+        item.year || 'unknown'
+      }-${item.episodes.length === 1 ? 'movie' : 'tv'}`;
       const arr = map.get(key) || [];
 
       // 如果是新的键，记录其顺序
@@ -229,7 +272,9 @@ function SearchPageClient() {
     });
 
     // 按出现顺序返回聚合结果
-    return keyOrder.map(key => [key, map.get(key)!] as [string, SearchResult[]]);
+    return keyOrder.map(
+      (key) => [key, map.get(key)!] as [string, SearchResult[]]
+    );
   }, [searchResults]);
 
   // 当聚合结果变化时，如果某个聚合已存在，则调用其卡片 ref 的 set 方法增量更新
@@ -291,7 +336,9 @@ function SearchPageClient() {
 
     // 年份: 将 unknown 放末尾
     const years = Array.from(yearsSet.values());
-    const knownYears = years.filter((y) => y !== 'unknown').sort((a, b) => parseInt(b) - parseInt(a));
+    const knownYears = years
+      .filter((y) => y !== 'unknown')
+      .sort((a, b) => parseInt(b) - parseInt(a));
     const hasUnknown = years.includes('unknown');
     const yearOptions: { label: string; value: string }[] = [
       { label: '全部年份', value: 'all' },
@@ -342,9 +389,9 @@ function SearchPageClient() {
       if (!aExactMatch && bExactMatch) return 1;
 
       // 最后按标题排序，正序时字母序，倒序时反字母序
-      return yearOrder === 'asc' ?
-        a.title.localeCompare(b.title) :
-        b.title.localeCompare(a.title);
+      return yearOrder === 'asc'
+        ? a.title.localeCompare(b.title)
+        : b.title.localeCompare(a.title);
     });
   }, [searchResults, filterAll, searchQuery]);
 
@@ -354,7 +401,8 @@ function SearchPageClient() {
     const filtered = aggregatedResults.filter(([_, group]) => {
       const gTitle = group[0]?.title ?? '';
       const gYear = group[0]?.year ?? 'unknown';
-      const hasSource = source === 'all' ? true : group.some((item) => item.source === source);
+      const hasSource =
+        source === 'all' ? true : group.some((item) => item.source === source);
       if (!hasSource) return false;
       if (title !== 'all' && gTitle !== title) return false;
       if (year !== 'all' && gYear !== year) return false;
@@ -383,9 +431,9 @@ function SearchPageClient() {
       // 最后按标题排序，正序时字母序，倒序时反字母序
       const aTitle = a[1][0].title;
       const bTitle = b[1][0].title;
-      return yearOrder === 'asc' ?
-        aTitle.localeCompare(bTitle) :
-        bTitle.localeCompare(aTitle);
+      return yearOrder === 'asc'
+        ? aTitle.localeCompare(bTitle)
+        : bTitle.localeCompare(aTitle);
     });
   }, [aggregatedResults, filterAgg, searchQuery]);
 
@@ -468,13 +516,35 @@ function SearchPageClient() {
   useEffect(() => {
     const currentQuery = searchQuery.trim() || searchParams.get('q');
     if (currentQuery) {
-      if (searchType === 'netdisk' && !netdiskLoading && !netdiskResults && !netdiskError) {
+      if (
+        searchType === 'netdisk' &&
+        !netdiskLoading &&
+        !netdiskResults &&
+        !netdiskError
+      ) {
         handleNetDiskSearch(currentQuery);
-      } else if (searchType === 'tmdb-actor' && !tmdbActorLoading && !tmdbActorResults && !tmdbActorError) {
+      } else if (
+        searchType === 'tmdb-actor' &&
+        !tmdbActorLoading &&
+        !tmdbActorResults &&
+        !tmdbActorError
+      ) {
         handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
       }
     }
-  }, [searchType, searchQuery, searchParams, netdiskLoading, netdiskResults, netdiskError, tmdbActorLoading, tmdbActorResults, tmdbActorError, tmdbActorType, tmdbFilterState]);
+  }, [
+    searchType,
+    searchQuery,
+    searchParams,
+    netdiskLoading,
+    netdiskResults,
+    netdiskError,
+    tmdbActorLoading,
+    tmdbActorResults,
+    tmdbActorError,
+    tmdbActorType,
+    tmdbFilterState,
+  ]);
 
   useEffect(() => {
     // 当搜索参数变化时更新搜索状态
@@ -485,7 +555,9 @@ function SearchPageClient() {
       setSearchQuery(query);
       // 新搜索：关闭旧连接并清空结果
       if (eventSourceRef.current) {
-        try { eventSourceRef.current.close(); } catch { }
+        try {
+          eventSourceRef.current.close();
+        } catch {}
         eventSourceRef.current = null;
       }
       setSearchResults([]);
@@ -509,7 +581,8 @@ function SearchPageClient() {
         if (savedFluidSearch !== null) {
           currentFluidSearch = JSON.parse(savedFluidSearch);
         } else {
-          const defaultFluidSearch = (window as any).RUNTIME_CONFIG?.FLUID_SEARCH !== false;
+          const defaultFluidSearch =
+            (window as any).RUNTIME_CONFIG?.FLUID_SEARCH !== false;
           currentFluidSearch = defaultFluidSearch;
         }
       }
@@ -521,7 +594,9 @@ function SearchPageClient() {
 
       if (currentFluidSearch) {
         // 流式搜索：打开新的流式连接
-        const es = new EventSource(`/api/search/ws?q=${encodeURIComponent(trimmed)}`);
+        const es = new EventSource(
+          `/api/search/ws?q=${encodeURIComponent(trimmed)}`
+        );
         eventSourceRef.current = es;
 
         es.onmessage = (event) => {
@@ -536,9 +611,15 @@ function SearchPageClient() {
                 break;
               case 'source_result': {
                 setCompletedSources((prev) => prev + 1);
-                if (Array.isArray(payload.results) && payload.results.length > 0) {
+                if (
+                  Array.isArray(payload.results) &&
+                  payload.results.length > 0
+                ) {
                   // 缓冲新增结果，节流刷入，避免频繁重渲染导致闪烁
-                  const activeYearOrder = (viewMode === 'agg' ? (filterAgg.yearOrder) : (filterAll.yearOrder));
+                  const activeYearOrder =
+                    viewMode === 'agg'
+                      ? filterAgg.yearOrder
+                      : filterAll.yearOrder;
                   const incoming: SearchResult[] =
                     activeYearOrder === 'none'
                       ? sortBatchForNoOrder(payload.results as SearchResult[])
@@ -575,13 +656,15 @@ function SearchPageClient() {
                   });
                 }
                 setIsLoading(false);
-                try { es.close(); } catch { }
+                try {
+                  es.close();
+                } catch {}
                 if (eventSourceRef.current === es) {
                   eventSourceRef.current = null;
                 }
                 break;
             }
-          } catch { }
+          } catch {}
         };
 
         es.onerror = () => {
@@ -598,7 +681,9 @@ function SearchPageClient() {
               setSearchResults((prev) => prev.concat(toAppend));
             });
           }
-          try { es.close(); } catch { }
+          try {
+            es.close();
+          } catch {}
           if (eventSourceRef.current === es) {
             eventSourceRef.current = null;
           }
@@ -606,12 +691,13 @@ function SearchPageClient() {
       } else {
         // 传统搜索：使用普通接口
         fetch(`/api/search?q=${encodeURIComponent(trimmed)}`)
-          .then(response => response.json())
-          .then(data => {
+          .then((response) => response.json())
+          .then((data) => {
             if (currentQueryRef.current !== trimmed) return;
 
             if (data.results && Array.isArray(data.results)) {
-              const activeYearOrder = (viewMode === 'agg' ? (filterAgg.yearOrder) : (filterAll.yearOrder));
+              const activeYearOrder =
+                viewMode === 'agg' ? filterAgg.yearOrder : filterAll.yearOrder;
               const results: SearchResult[] =
                 activeYearOrder === 'none'
                   ? sortBatchForNoOrder(data.results as SearchResult[])
@@ -641,7 +727,9 @@ function SearchPageClient() {
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
-        try { eventSourceRef.current.close(); } catch { }
+        try {
+          eventSourceRef.current.close();
+        } catch {}
         eventSourceRef.current = null;
       }
       if (flushTimerRef.current) {
@@ -681,7 +769,9 @@ function SearchPageClient() {
     setNetdiskTotal(0);
 
     try {
-      const response = await fetch(`/api/netdisk/search?q=${encodeURIComponent(query.trim())}`);
+      const response = await fetch(
+        `/api/netdisk/search?q=${encodeURIComponent(query.trim())}`
+      );
       const data = await response.json();
 
       // 检查响应状态和success字段
@@ -701,7 +791,11 @@ function SearchPageClient() {
   };
 
   // TMDB演员搜索函数
-  const handleTmdbActorSearch = async (query: string, type = tmdbActorType, filterState = tmdbFilterState) => {
+  const handleTmdbActorSearch = async (
+    query: string,
+    type = tmdbActorType,
+    filterState = tmdbFilterState
+  ) => {
     if (!query.trim()) return;
 
     console.log(`🚀 [前端TMDB] 开始搜索: ${query}, type=${type}`);
@@ -714,7 +808,7 @@ function SearchPageClient() {
       // 构建筛选参数
       const params = new URLSearchParams({
         actor: query.trim(),
-        type: type
+        type: type,
       });
 
       // 只有设置了limit且大于0时才添加limit参数
@@ -723,19 +817,33 @@ function SearchPageClient() {
       }
 
       // 添加筛选参数
-      if (filterState.startYear) params.append('startYear', filterState.startYear.toString());
-      if (filterState.endYear) params.append('endYear', filterState.endYear.toString());
-      if (filterState.minRating) params.append('minRating', filterState.minRating.toString());
-      if (filterState.maxRating) params.append('maxRating', filterState.maxRating.toString());
-      if (filterState.minPopularity) params.append('minPopularity', filterState.minPopularity.toString());
-      if (filterState.maxPopularity) params.append('maxPopularity', filterState.maxPopularity.toString());
-      if (filterState.minVoteCount) params.append('minVoteCount', filterState.minVoteCount.toString());
-      if (filterState.minEpisodeCount) params.append('minEpisodeCount', filterState.minEpisodeCount.toString());
-      if (filterState.genreIds && filterState.genreIds.length > 0) params.append('genreIds', filterState.genreIds.join(','));
-      if (filterState.languages && filterState.languages.length > 0) params.append('languages', filterState.languages.join(','));
+      if (filterState.startYear)
+        params.append('startYear', filterState.startYear.toString());
+      if (filterState.endYear)
+        params.append('endYear', filterState.endYear.toString());
+      if (filterState.minRating)
+        params.append('minRating', filterState.minRating.toString());
+      if (filterState.maxRating)
+        params.append('maxRating', filterState.maxRating.toString());
+      if (filterState.minPopularity)
+        params.append('minPopularity', filterState.minPopularity.toString());
+      if (filterState.maxPopularity)
+        params.append('maxPopularity', filterState.maxPopularity.toString());
+      if (filterState.minVoteCount)
+        params.append('minVoteCount', filterState.minVoteCount.toString());
+      if (filterState.minEpisodeCount)
+        params.append(
+          'minEpisodeCount',
+          filterState.minEpisodeCount.toString()
+        );
+      if (filterState.genreIds && filterState.genreIds.length > 0)
+        params.append('genreIds', filterState.genreIds.join(','));
+      if (filterState.languages && filterState.languages.length > 0)
+        params.append('languages', filterState.languages.join(','));
       if (filterState.onlyRated) params.append('onlyRated', 'true');
       if (filterState.sortBy) params.append('sortBy', filterState.sortBy);
-      if (filterState.sortOrder) params.append('sortOrder', filterState.sortOrder);
+      if (filterState.sortOrder)
+        params.append('sortOrder', filterState.sortOrder);
 
       // 调用TMDB API端点
       const response = await fetch(`/api/tmdb/actor?${params.toString()}`);
@@ -826,10 +934,13 @@ function SearchPageClient() {
                     setTmdbActorResults(null);
                     setTmdbActorError(null);
                     // 如果有搜索词且当前显示结果，触发影视搜索
-                    const currentQuery = searchQuery.trim() || searchParams?.get('q');
+                    const currentQuery =
+                      searchQuery.trim() || searchParams?.get('q');
                     if (currentQuery && showResults) {
                       setIsLoading(true);
-                      router.push(`/search?q=${encodeURIComponent(currentQuery)}`);
+                      router.push(
+                        `/search?q=${encodeURIComponent(currentQuery)}`
+                      );
                     }
                   }}
                   className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
@@ -850,7 +961,8 @@ function SearchPageClient() {
                     setTmdbActorResults(null);
                     setTmdbActorError(null);
                     // 如果当前有搜索词，立即触发网盘搜索
-                    const currentQuery = searchQuery.trim() || searchParams?.get('q');
+                    const currentQuery =
+                      searchQuery.trim() || searchParams?.get('q');
                     if (currentQuery && showResults) {
                       handleNetDiskSearch(currentQuery);
                     }
@@ -874,9 +986,14 @@ function SearchPageClient() {
                     setNetdiskError(null);
                     setNetdiskTotal(0);
                     // 如果当前有搜索词，立即触发TMDB演员搜索
-                    const currentQuery = searchQuery.trim() || searchParams?.get('q');
+                    const currentQuery =
+                      searchQuery.trim() || searchParams?.get('q');
                     if (currentQuery && showResults) {
-                      handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
+                      handleTmdbActorSearch(
+                        currentQuery,
+                        tmdbActorType,
+                        tmdbFilterState
+                      );
                     }
                   }}
                   className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
@@ -900,7 +1017,7 @@ function SearchPageClient() {
                 value={searchQuery}
                 onChange={handleInputChange}
                 onFocus={handleInputFocus}
-                autoComplete="off"
+                autoComplete='off'
                 className='w-full h-12 rounded-lg bg-gray-50/80 py-3 pl-10 pr-12 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:bg-white border border-gray-200/50 shadow-sm dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-500 dark:focus:bg-gray-700 dark:border-gray-700'
               />
 
@@ -983,19 +1100,26 @@ function SearchPageClient() {
 
                     {/* 电影/电视剧类型选择器 */}
                     <div className='mt-3 flex items-center gap-2'>
-                      <span className='text-sm text-gray-600 dark:text-gray-400'>类型：</span>
+                      <span className='text-sm text-gray-600 dark:text-gray-400'>
+                        类型：
+                      </span>
                       <div className='flex gap-2'>
                         {[
                           { key: 'movie', label: '电影' },
-                          { key: 'tv', label: '电视剧' }
+                          { key: 'tv', label: '电视剧' },
                         ].map((type) => (
                           <button
                             key={type.key}
                             onClick={() => {
                               setTmdbActorType(type.key as 'movie' | 'tv');
-                              const currentQuery = searchQuery.trim() || searchParams?.get('q');
+                              const currentQuery =
+                                searchQuery.trim() || searchParams?.get('q');
                               if (currentQuery) {
-                                handleTmdbActorSearch(currentQuery, type.key as 'movie' | 'tv', tmdbFilterState);
+                                handleTmdbActorSearch(
+                                  currentQuery,
+                                  type.key as 'movie' | 'tv',
+                                  tmdbFilterState
+                                );
                               }
                             }}
                             className={`px-3 py-1 text-sm rounded-full border transition-colors ${
@@ -1018,13 +1142,20 @@ function SearchPageClient() {
                         filters={tmdbFilterState}
                         onFiltersChange={(newFilterState) => {
                           setTmdbFilterState(newFilterState);
-                          const currentQuery = searchQuery.trim() || searchParams?.get('q');
+                          const currentQuery =
+                            searchQuery.trim() || searchParams?.get('q');
                           if (currentQuery) {
-                            handleTmdbActorSearch(currentQuery, tmdbActorType, newFilterState);
+                            handleTmdbActorSearch(
+                              currentQuery,
+                              tmdbActorType,
+                              newFilterState
+                            );
                           }
                         }}
                         isVisible={tmdbFilterVisible}
-                        onToggleVisible={() => setTmdbFilterVisible(!tmdbFilterVisible)}
+                        onToggleVisible={() =>
+                          setTmdbFilterVisible(!tmdbFilterVisible)
+                        }
                         resultCount={tmdbActorResults?.length || 0}
                       />
                     </div>
@@ -1035,9 +1166,14 @@ function SearchPageClient() {
                       <div className='text-red-500 mb-2'>{tmdbActorError}</div>
                       <button
                         onClick={() => {
-                          const currentQuery = searchQuery.trim() || searchParams?.get('q');
+                          const currentQuery =
+                            searchQuery.trim() || searchParams?.get('q');
                           if (currentQuery) {
-                            handleTmdbActorSearch(currentQuery, tmdbActorType, tmdbFilterState);
+                            handleTmdbActorSearch(
+                              currentQuery,
+                              tmdbActorType,
+                              tmdbFilterState
+                            );
                           }
                         }}
                         className='px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors'
@@ -1106,16 +1242,30 @@ function SearchPageClient() {
                   </div>
 
                   {/* 搜索结果内容 */}
-                  {(viewMode === 'agg' ? filteredAggResults.length > 0 : filteredAllResults.length > 0) ? (
-                      <div className='grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
-                        {viewMode === 'agg' ? (
-                          filteredAggResults.map(([mapKey, group]) => {
+                  {(
+                    viewMode === 'agg'
+                      ? filteredAggResults.length > 0
+                      : filteredAllResults.length > 0
+                  ) ? (
+                    <div className='grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
+                      {viewMode === 'agg'
+                        ? filteredAggResults.map(([mapKey, group]) => {
                             const title = group[0]?.title || '';
                             const poster = group[0]?.poster || '';
                             const year = group[0]?.year || 'unknown';
-                            const episodes = group.reduce((sum, item) => Math.max(sum, (item.episodes?.length || 1)), 1);
-                            const source_names = Array.from(new Set(group.map(item => item.source).filter(Boolean)));
-                            const douban_id = group.find(item => item.douban_id)?.douban_id;
+                            const episodes = group.reduce(
+                              (sum, item) =>
+                                Math.max(sum, item.episodes?.length || 1),
+                              1
+                            );
+                            const source_names = Array.from(
+                              new Set(
+                                group.map((item) => item.source).filter(Boolean)
+                              )
+                            );
+                            const douban_id = group.find(
+                              (item) => item.douban_id
+                            )?.douban_id;
                             const type = episodes === 1 ? 'movie' : 'tv';
 
                             return (
@@ -1139,9 +1289,11 @@ function SearchPageClient() {
                               </div>
                             );
                           })
-                        ) : (
-                          filteredAllResults.map((result) => (
-                            <div key={result.id + result.source_name} className='w-full'>
+                        : filteredAllResults.map((result) => (
+                            <div
+                              key={result.id + result.source_name}
+                              className='w-full'
+                            >
                               <VideoCard
                                 id={result.id}
                                 title={result.title}
@@ -1151,17 +1303,28 @@ function SearchPageClient() {
                                 from='search'
                                 type={result.type_name}
                                 source_name={result.source_name}
-                                query={searchQuery.trim() !== result.title ? searchQuery.trim() : ''}
+                                query={
+                                  searchQuery.trim() !== result.title
+                                    ? searchQuery.trim()
+                                    : ''
+                                }
                               />
                             </div>
-                          ))
-                        )}
-                      </div>
+                          ))}
+                    </div>
                   ) : !isLoading ? (
                     <div className='text-center text-gray-500 py-8 dark:text-gray-400'>
                       <div className='mb-4'>
-                        <svg className='w-16 h-16 mx-auto text-gray-300 dark:text-gray-600' fill='currentColor' viewBox='0 0 20 20'>
-                          <path fillRule='evenodd' d='M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z' clipRule='evenodd' />
+                        <svg
+                          className='w-16 h-16 mx-auto text-gray-300 dark:text-gray-600'
+                          fill='currentColor'
+                          viewBox='0 0 20 20'
+                        >
+                          <path
+                            fillRule='evenodd'
+                            d='M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z'
+                            clipRule='evenodd'
+                          />
                         </svg>
                       </div>
                       <p className='text-lg mb-2'>在上方搜索框输入关键词</p>
@@ -1172,14 +1335,30 @@ function SearchPageClient() {
             </section>
           ) : (
             /* 搜索历史 */
-            <div className="p-4">
-              <h3 className="text-lg font-semibold mb-4 dark:text-white">搜索历史</h3>
+            <div className='p-4'>
+              <div className='flex items-center justify-between mb-4'>
+                <h3 className='text-lg font-semibold dark:text-white'>
+                  搜索历史
+                </h3>
+                {searchHistory.length > 0 && (
+                  <button
+                    onClick={async () => {
+                      if (confirm('确定要清空所有搜索历史吗？')) {
+                        await clearAllSearchHistory();
+                      }
+                    }}
+                    className='text-sm text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors'
+                  >
+                    清空历史
+                  </button>
+                )}
+              </div>
               {searchHistory.length > 0 ? (
-                <div className="space-y-2">
+                <div className='space-y-2'>
                   {searchHistory.slice(0, 10).map((keyword, index) => (
                     <button
                       key={index}
-                      className="text-left w-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-700 dark:text-gray-300"
+                      className='text-left w-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded text-gray-700 dark:text-gray-300'
                       onClick={() => {
                         setSearchQuery(keyword);
                         const event = new Event('submit') as any;
@@ -1191,7 +1370,7 @@ function SearchPageClient() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 dark:text-gray-400">暂无搜索历史</p>
+                <p className='text-gray-500 dark:text-gray-400'>暂无搜索历史</p>
               )}
             </div>
           )}
@@ -1201,10 +1380,11 @@ function SearchPageClient() {
       {/* 返回顶部悬浮按钮 */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-20 md:bottom-6 right-6 z-[500] w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${showBackToTop
-          ? 'opacity-100 translate-y-0 pointer-events-auto'
-          : 'opacity-0 translate-y-4 pointer-events-none'
-          }`}
+        className={`fixed bottom-20 md:bottom-6 right-6 z-[500] w-12 h-12 bg-green-500/90 hover:bg-green-500 text-white rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center group ${
+          showBackToTop
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
         aria-label='返回顶部'
       >
         <ChevronUp className='w-6 h-6 transition-transform group-hover:scale-110' />

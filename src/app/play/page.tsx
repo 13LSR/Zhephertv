@@ -1939,13 +1939,16 @@ function PlayPageClient() {
       );
 
       let sourcesInfo: SearchResult[] = [];
+      let useSpecificSource = true; // 标记是否应该使用指定的源
 
       // 对于短剧，直接获取详情，跳过搜索
       if (currentSource === 'shortdrama' && currentId) {
         sourcesInfo = await fetchSourceDetail(currentSource, currentId);
       } else {
-        // 其他情况先搜索
+        // 其他情况先搜索所有源
         sourcesInfo = await fetchSourcesData(searchTitle || videoTitle);
+
+        // 如果指定了源和ID，但搜索结果中不包含，则额外获取该源详情并添加到列表
         if (
           currentSource &&
           currentId &&
@@ -1954,7 +1957,25 @@ function PlayPageClient() {
               source.source === currentSource && source.id === currentId
           )
         ) {
-          sourcesInfo = await fetchSourceDetail(currentSource, currentId);
+          const specificSourceDetail = await fetchSourceDetail(
+            currentSource,
+            currentId
+          );
+          // 将特定源添加到搜索结果前面，确保用户能看到所有源
+          if (specificSourceDetail.length > 0) {
+            sourcesInfo = [...specificSourceDetail, ...sourcesInfo];
+          } else if (sourcesInfo.length === 0) {
+            // 如果特定源获取失败且没有其他搜索结果，显示错误
+            setError(
+              `无法获取指定源(${currentSource})的视频详情，请尝试其他源`
+            );
+            setLoading(false);
+            return;
+          } else {
+            // 如果特定源获取失败但有其他搜索结果，标记不使用特定源
+            console.log(`指定源(${currentSource})获取失败，使用搜索到的其他源`);
+            useSpecificSource = false;
+          }
         }
       }
       if (sourcesInfo.length === 0) {
@@ -1964,8 +1985,13 @@ function PlayPageClient() {
       }
 
       let detailData: SearchResult = sourcesInfo[0];
-      // 指定源和id且无需优选
-      if (currentSource && currentId && !needPreferRef.current) {
+      // 只有在应该使用指定源时才尝试查找精确匹配
+      if (
+        currentSource &&
+        currentId &&
+        !needPreferRef.current &&
+        useSpecificSource
+      ) {
         const target = sourcesInfo.find(
           (source) => source.source === currentSource && source.id === currentId
         );

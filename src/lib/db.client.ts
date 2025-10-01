@@ -206,12 +206,17 @@ class HybridCacheManager {
   /**
    * 检查缓存是否有效
    */
-  private isCacheValid<T>(cache: CacheData<T>, cacheType?: 'playRecords'): boolean {
+  private isCacheValid<T>(
+    cache: CacheData<T>,
+    cacheType?: 'playRecords'
+  ): boolean {
     const now = Date.now();
-    const expireTime = cacheType === 'playRecords' ? PLAY_RECORDS_CACHE_EXPIRE_TIME : CACHE_EXPIRE_TIME;
+    const expireTime =
+      cacheType === 'playRecords'
+        ? PLAY_RECORDS_CACHE_EXPIRE_TIME
+        : CACHE_EXPIRE_TIME;
     return (
-      cache.version === CACHE_VERSION &&
-      now - cache.timestamp < expireTime
+      cache.version === CACHE_VERSION && now - cache.timestamp < expireTime
     );
   }
 
@@ -448,7 +453,10 @@ class HybridCacheManager {
   /**
    * @deprecated 豆瓣缓存已迁移到统一存储，请使用 douban.client.ts 中的方法
    */
-  private isDoubanCacheValid<T>(cache: CacheData<T>, type: 'details' | 'lists'): boolean {
+  private isDoubanCacheValid<T>(
+    cache: CacheData<T>,
+    type: 'details' | 'lists'
+  ): boolean {
     return false; // 始终返回false，强制使用新的缓存系统
   }
 
@@ -486,7 +494,12 @@ class HybridCacheManager {
   /**
    * 生成豆瓣列表缓存键
    */
-  static generateDoubanListKey(type: string, tag: string, pageStart: number, pageSize: number): string {
+  static generateDoubanListKey(
+    type: string,
+    tag: string,
+    pageStart: number,
+    pageSize: number
+  ): string {
     return `${type}:${tag}:${pageStart}:${pageSize}`;
   }
 
@@ -612,8 +625,12 @@ export function generateStorageKey(source: string, id: string): string {
  * 4. 新集数增加量合理（防止API错误数据）
  * 5. 用户观看的新集数超过原始集数至少1集（确保真的看了新内容）
  */
-function checkShouldUpdateOriginalEpisodes(existingRecord: PlayRecord, newRecord: PlayRecord): boolean {
-  const originalEpisodes = existingRecord.original_episodes || existingRecord.total_episodes;
+function checkShouldUpdateOriginalEpisodes(
+  existingRecord: PlayRecord,
+  newRecord: PlayRecord
+): boolean {
+  const originalEpisodes =
+    existingRecord.original_episodes || existingRecord.total_episodes;
 
   // 条件1：用户观看进度超过了原始集数（说明用户已经看了新更新的集数）
   const hasWatchedBeyondOriginal = newRecord.index > originalEpisodes;
@@ -634,17 +651,22 @@ function checkShouldUpdateOriginalEpisodes(existingRecord: PlayRecord, newRecord
   // 条件6：观看进度与集数匹配（防止数据不一致）
   const progressMatches = newRecord.index <= newRecord.total_episodes;
 
-  const shouldUpdate = hasWatchedBeyondOriginal &&
-                      hasMoreEpisodes &&
-                      hasSignificantProgress &&
-                      reasonableIncrement &&
-                      watchedNewEpisodes &&
-                      progressMatches;
+  const shouldUpdate =
+    hasWatchedBeyondOriginal &&
+    hasMoreEpisodes &&
+    hasSignificantProgress &&
+    reasonableIncrement &&
+    watchedNewEpisodes &&
+    progressMatches;
 
   if (shouldUpdate) {
-    console.log(`✓ 检测到应更新原始集数: ${existingRecord.title} - 观看到第${newRecord.index}集，超过原始${originalEpisodes}集，当前总${newRecord.total_episodes}集，增加${episodeIncrement}集`);
+    console.log(
+      `✓ 检测到应更新原始集数: ${existingRecord.title} - 观看到第${newRecord.index}集，超过原始${originalEpisodes}集，当前总${newRecord.total_episodes}集，增加${episodeIncrement}集`
+    );
   } else {
-    console.log(`✗ 不更新原始集数: ${existingRecord.title} - 观看第${newRecord.index}集，原始${originalEpisodes}集，当前总${newRecord.total_episodes}集 [超过原始:${hasWatchedBeyondOriginal}, 有新集:${hasMoreEpisodes}, 观看时长足够:${hasSignificantProgress}, 增量合理:${reasonableIncrement}, 看了新集:${watchedNewEpisodes}, 进度匹配:${progressMatches}]`);
+    console.log(
+      `✗ 不更新原始集数: ${existingRecord.title} - 观看第${newRecord.index}集，原始${originalEpisodes}集，当前总${newRecord.total_episodes}集 [超过原始:${hasWatchedBeyondOriginal}, 有新集:${hasMoreEpisodes}, 观看时长足够:${hasSignificantProgress}, 增量合理:${reasonableIncrement}, 看了新集:${watchedNewEpisodes}, 进度匹配:${progressMatches}]`
+    );
   }
 
   return shouldUpdate;
@@ -735,16 +757,25 @@ export async function savePlayRecord(
   if (!existingRecord && record.total_episodes > 1) {
     record.original_episodes = record.total_episodes;
     console.log(`✓ 首次保存原始集数: ${key} = ${record.total_episodes}集`);
-  } else if (existingRecord && !existingRecord.original_episodes && record.total_episodes > 1) {
+  } else if (
+    existingRecord &&
+    !existingRecord.original_episodes &&
+    record.total_episodes > 1
+  ) {
     // 如果现有记录没有原始集数，补充保存
     record.original_episodes = record.total_episodes;
     console.log(`✓ 补充保存原始集数: ${key} = ${record.total_episodes}集`);
   } else if (existingRecord?.original_episodes) {
     // 检查是否需要更新原始集数
-    const shouldUpdateOriginal = checkShouldUpdateOriginalEpisodes(existingRecord, record);
+    const shouldUpdateOriginal = checkShouldUpdateOriginalEpisodes(
+      existingRecord,
+      record
+    );
     if (shouldUpdateOriginal) {
       record.original_episodes = record.total_episodes;
-      console.log(`✓ 更新原始集数: ${key} = ${existingRecord.original_episodes}集 -> ${record.total_episodes}集`);
+      console.log(
+        `✓ 更新原始集数: ${key} = ${existingRecord.original_episodes}集 -> ${record.total_episodes}集`
+      );
     } else {
       // 保持现有的原始集数不变
       record.original_episodes = existingRecord.original_episodes;
@@ -776,7 +807,7 @@ export async function savePlayRecord(
       });
 
       // 异步更新用户统计数据（不阻塞主流程）
-      updateUserStats(record).catch(err => {
+      updateUserStats(record).catch((err) => {
         console.warn('更新用户统计数据失败:', err);
       });
     } catch (err) {
@@ -804,7 +835,7 @@ export async function savePlayRecord(
     );
 
     // 异步更新用户统计数据（不阻塞主流程）
-    updateUserStats(record).catch(err => {
+    updateUserStats(record).catch((err) => {
       console.warn('更新用户统计数据失败:', err);
     });
   } catch (err) {
@@ -1038,6 +1069,49 @@ export async function clearSearchHistory(): Promise<void> {
       detail: [],
     })
   );
+}
+
+/**
+ * 清空全部搜索历史。
+ * 数据库存储模式下使用乐观更新：先更新缓存，再异步同步到数据库。
+ */
+export async function clearAllSearchHistory(): Promise<void> {
+  // 数据库存储模式：乐观更新策略（包括 redis 和 upstash）
+  if (STORAGE_TYPE !== 'localstorage') {
+    // 立即更新缓存为空数组
+    cacheManager.cacheSearchHistory([]);
+
+    // 触发立即更新事件
+    window.dispatchEvent(
+      new CustomEvent('searchHistoryUpdated', {
+        detail: [],
+      })
+    );
+
+    // 异步同步到数据库 - 不带keyword参数表示清空全部
+    try {
+      await fetchWithAuth('/api/searchhistory', {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      await handleDatabaseOperationFailure('searchHistory', err);
+    }
+    return;
+  }
+
+  // localStorage 模式
+  if (typeof window === 'undefined') return;
+
+  try {
+    localStorage.removeItem(SEARCH_HISTORY_KEY);
+    window.dispatchEvent(
+      new CustomEvent('searchHistoryUpdated', {
+        detail: [],
+      })
+    );
+  } catch (err) {
+    console.error('清空搜索历史失败:', err);
+  }
 }
 
 /**
@@ -1558,7 +1632,7 @@ export function subscribeToDataUpdates<T>(
   callback: (data: T) => void
 ): () => void {
   if (typeof window === 'undefined') {
-    return () => { };
+    return () => {};
   }
 
   const handleUpdate = (event: CustomEvent) => {
@@ -1885,19 +1959,30 @@ export function setDoubanDetailsCache(id: string, data: any): void {
  * @param pageSize 页面大小
  * @returns null
  */
-export function getDoubanListCache(type: string, tag: string, pageStart: number, pageSize: number): any | null {
+export function getDoubanListCache(
+  type: string,
+  tag: string,
+  pageStart: number,
+  pageSize: number
+): any | null {
   return null; // 不再使用本地缓存
 }
 
 /**
  * @deprecated 豆瓣缓存已迁移到统一存储，请使用 douban.client.ts 中的方法
- * @param type 类型 (tv/movie) 
+ * @param type 类型 (tv/movie)
  * @param tag 标签
  * @param pageStart 页面起始位置
  * @param pageSize 页面大小
  * @param data 列表数据
  */
-export function setDoubanListCache(type: string, tag: string, pageStart: number, pageSize: number, data: any): void {
+export function setDoubanListCache(
+  type: string,
+  tag: string,
+  pageStart: number,
+  pageSize: number,
+  data: any
+): void {
   // 不再使用本地缓存
 }
 
@@ -1921,11 +2006,21 @@ export function calculateRegistrationDays(startDate: number): number {
   const currentDate = new Date();
 
   // 获取自然日（忽略时分秒）
-  const firstDay = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate());
-  const currentDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+  const firstDay = new Date(
+    firstDate.getFullYear(),
+    firstDate.getMonth(),
+    firstDate.getDate()
+  );
+  const currentDay = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    currentDate.getDate()
+  );
 
   // 计算自然日差值并加1
-  const daysDiff = Math.floor((currentDay.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24));
+  const daysDiff = Math.floor(
+    (currentDay.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24)
+  );
   return daysDiff + 1;
 }
 
@@ -1953,9 +2048,11 @@ export async function getUserStats(forceRefresh = false): Promise<UserStats> {
           .then((freshData) => {
             if (JSON.stringify(cached) !== JSON.stringify(freshData)) {
               cacheManager.cacheUserStats(freshData);
-              window.dispatchEvent(new CustomEvent('userStatsUpdated', {
-                detail: freshData
-              }));
+              window.dispatchEvent(
+                new CustomEvent('userStatsUpdated', {
+                  detail: freshData,
+                })
+              );
             }
           })
           .catch((err) => {
@@ -2012,14 +2109,19 @@ async function calculateStatsFromLocalData(): Promise<UserStats> {
         mostWatchedSource: '',
         totalMovies: 0,
         firstWatchDate: Date.now(),
-        lastUpdateTime: Date.now()
+        lastUpdateTime: Date.now(),
       };
     }
 
-    const totalWatchTime = records.reduce((sum, record) => sum + record.play_time, 0);
-    const totalMovies = new Set(records.map(r => `${r.title}_${r.source_name}_${r.year}`)).size;
-    const firstWatchDate = Math.min(...records.map(r => r.save_time));
-    const lastPlayTime = Math.max(...records.map(r => r.save_time));
+    const totalWatchTime = records.reduce(
+      (sum, record) => sum + record.play_time,
+      0
+    );
+    const totalMovies = new Set(
+      records.map((r) => `${r.title}_${r.source_name}_${r.year}`)
+    ).size;
+    const firstWatchDate = Math.min(...records.map((r) => r.save_time));
+    const lastPlayTime = Math.max(...records.map((r) => r.save_time));
     const totalPlays = records.length;
 
     // 计算最常观看的来源
@@ -2027,16 +2129,16 @@ async function calculateStatsFromLocalData(): Promise<UserStats> {
       acc[record.source_name] = (acc[record.source_name] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    const mostWatchedSource = Object.entries(sourceCounts)
-      .sort(([,a], [,b]) => b - a)[0]?.[0] || '';
+    const mostWatchedSource =
+      Object.entries(sourceCounts).sort(([, a], [, b]) => b - a)[0]?.[0] || '';
 
     // 获取最近的播放记录（最多10条），确保search_title字段存在
     const recentRecords = records
       .sort((a, b) => b.save_time - a.save_time)
       .slice(0, 10)
-      .map(record => ({
+      .map((record) => ({
         ...record,
-        search_title: record.search_title || record.title // 确保search_title有值
+        search_title: record.search_title || record.title, // 确保search_title有值
       }));
 
     const stats: UserStats = {
@@ -2049,7 +2151,7 @@ async function calculateStatsFromLocalData(): Promise<UserStats> {
       mostWatchedSource,
       totalMovies,
       firstWatchDate,
-      lastUpdateTime: Date.now()
+      lastUpdateTime: Date.now(),
     };
 
     // 缓存计算结果
@@ -2070,7 +2172,7 @@ async function calculateStatsFromLocalData(): Promise<UserStats> {
       mostWatchedSource: '',
       totalMovies: 0,
       firstWatchDate: Date.now(),
-      lastUpdateTime: Date.now()
+      lastUpdateTime: Date.now(),
     };
   }
 }
@@ -2087,7 +2189,7 @@ export async function updateUserStats(record: PlayRecord): Promise<void> {
     index: record.index,
     playTime: record.play_time,
     totalTime: record.total_time,
-    saveTime: new Date(record.save_time).toLocaleString()
+    saveTime: new Date(record.save_time).toLocaleString(),
   });
 
   try {
@@ -2102,7 +2204,9 @@ export async function updateUserStats(record: PlayRecord): Promise<void> {
 
     // 获取上次播放进度和更新时间
     const lastProgress = parseInt(localStorage.getItem(lastProgressKey) || '0');
-    const lastUpdateTime = parseInt(localStorage.getItem(lastUpdateTimeKey) || '0');
+    const lastUpdateTime = parseInt(
+      localStorage.getItem(lastUpdateTimeKey) || '0'
+    );
 
     // 计算观看时间增量
     let watchTimeIncrement = 0;
@@ -2110,8 +2214,15 @@ export async function updateUserStats(record: PlayRecord): Promise<void> {
     const timeSinceLastUpdate = currentTime - lastUpdateTime;
 
     // 放宽更新条件：只要有实际播放进度变化就更新
-    if (timeSinceLastUpdate < 10 * 1000 && Math.abs(record.play_time - lastProgress) < 1) {
-      console.log(`跳过统计数据更新: 时间间隔过短 (${Math.floor(timeSinceLastUpdate / 1000)}s) 且进度无变化`);
+    if (
+      timeSinceLastUpdate < 10 * 1000 &&
+      Math.abs(record.play_time - lastProgress) < 1
+    ) {
+      console.log(
+        `跳过统计数据更新: 时间间隔过短 (${Math.floor(
+          timeSinceLastUpdate / 1000
+        )}s) 且进度无变化`
+      );
       return;
     }
 
@@ -2121,33 +2232,56 @@ export async function updateUserStats(record: PlayRecord): Promise<void> {
       watchTimeIncrement = record.play_time - lastProgress;
 
       // 如果进度增加过大（可能是快进），限制增量
-      if (watchTimeIncrement > 300) { // 超过5分钟认为是快进
-        watchTimeIncrement = Math.min(watchTimeIncrement, Math.floor(timeSinceLastUpdate / 1000) + 60);
-        console.log(`检测到快进操作: ${record.title} 第${record.index}集 - 进度增加: ${record.play_time - lastProgress}s, 限制增量为: ${watchTimeIncrement}s`);
+      if (watchTimeIncrement > 300) {
+        // 超过5分钟认为是快进
+        watchTimeIncrement = Math.min(
+          watchTimeIncrement,
+          Math.floor(timeSinceLastUpdate / 1000) + 60
+        );
+        console.log(
+          `检测到快进操作: ${record.title} 第${record.index}集 - 进度增加: ${
+            record.play_time - lastProgress
+          }s, 限制增量为: ${watchTimeIncrement}s`
+        );
       }
     } else if (record.play_time < lastProgress) {
       // 进度回退的情况（重新观看、跳转等）
-      if (timeSinceLastUpdate > 1 * 60 * 1000) { // 1分钟以上认为是重新开始观看
+      if (timeSinceLastUpdate > 1 * 60 * 1000) {
+        // 1分钟以上认为是重新开始观看
         watchTimeIncrement = Math.min(record.play_time, 60); // 重新观看最多给60秒增量
-        console.log(`检测到重新观看: ${record.title} 第${record.index}集 - 当前进度: ${record.play_time}s, 上次进度: ${lastProgress}s`);
+        console.log(
+          `检测到重新观看: ${record.title} 第${record.index}集 - 当前进度: ${record.play_time}s, 上次进度: ${lastProgress}s`
+        );
       } else {
         // 短时间内的回退，可能是快退操作，不给增量
         watchTimeIncrement = 0;
-        console.log(`检测到快退操作: ${record.title} 第${record.index}集 - 不计入观看时间`);
+        console.log(
+          `检测到快退操作: ${record.title} 第${record.index}集 - 不计入观看时间`
+        );
       }
     } else {
       // 进度相同，可能是暂停后继续，给予少量时间增量
-      if (timeSinceLastUpdate > 30 * 1000) { // 30秒以上认为有观看时间
-        watchTimeIncrement = Math.min(Math.floor(timeSinceLastUpdate / 1000), 60); // 最多1分钟
-        console.log(`检测到暂停后继续: ${record.title} 第${record.index}集 - 使用增量: ${watchTimeIncrement}s`);
+      if (timeSinceLastUpdate > 30 * 1000) {
+        // 30秒以上认为有观看时间
+        watchTimeIncrement = Math.min(
+          Math.floor(timeSinceLastUpdate / 1000),
+          60
+        ); // 最多1分钟
+        console.log(
+          `检测到暂停后继续: ${record.title} 第${record.index}集 - 使用增量: ${watchTimeIncrement}s`
+        );
       }
     }
 
-    console.log(`观看时间增量计算: ${record.title} 第${record.index}集 - 增量: ${watchTimeIncrement}s`);
+    console.log(
+      `观看时间增量计算: ${record.title} 第${record.index}集 - 增量: ${watchTimeIncrement}s`
+    );
 
     // 只要有观看时间增量就更新统计数据
     if (watchTimeIncrement > 0) {
-      console.log(`发送统计数据更新请求: 增量 ${watchTimeIncrement}s, movieKey: ${movieKey}`);
+      console.log(
+        `发送统计数据更新请求: 增量 ${watchTimeIncrement}s, movieKey: ${movieKey}`
+      );
 
       // 数据库存储模式：发送到服务器更新
       if (STORAGE_TYPE !== 'localstorage') {
@@ -2160,7 +2294,7 @@ export async function updateUserStats(record: PlayRecord): Promise<void> {
             body: JSON.stringify({
               watchTime: watchTimeIncrement,
               movieKey: movieKey,
-              timestamp: currentTime
+              timestamp: currentTime,
             }),
           });
 
@@ -2178,9 +2312,11 @@ export async function updateUserStats(record: PlayRecord): Promise<void> {
               console.log(`更新用户统计数据缓存:`, responseData.userStats);
 
               // 触发用户统计数据更新事件
-              window.dispatchEvent(new CustomEvent('userStatsUpdated', {
-                detail: responseData.userStats
-              }));
+              window.dispatchEvent(
+                new CustomEvent('userStatsUpdated', {
+                  detail: responseData.userStats,
+                })
+              );
             }
           } else {
             console.error(`更新用户统计数据失败: ${response.status}`);
@@ -2201,12 +2337,16 @@ export async function updateUserStats(record: PlayRecord): Promise<void> {
           const updatedStats: UserStats = {
             ...currentStats,
             totalWatchTime: currentStats.totalWatchTime + watchTimeIncrement,
-            lastUpdateTime: currentTime
+            lastUpdateTime: currentTime,
           };
 
           // 检查是否有新的影片
           const playRecords = await getAllPlayRecords();
-          const uniqueMovies = new Set(Object.values(playRecords).map(r => `${r.title}_${r.source_name}_${r.year}`));
+          const uniqueMovies = new Set(
+            Object.values(playRecords).map(
+              (r) => `${r.title}_${r.source_name}_${r.year}`
+            )
+          );
           updatedStats.totalMovies = uniqueMovies.size;
 
           // 保存到localStorage
@@ -2217,9 +2357,11 @@ export async function updateUserStats(record: PlayRecord): Promise<void> {
           localStorage.setItem(lastUpdateTimeKey, currentTime.toString());
 
           // 触发更新事件
-          window.dispatchEvent(new CustomEvent('userStatsUpdated', {
-            detail: updatedStats
-          }));
+          window.dispatchEvent(
+            new CustomEvent('userStatsUpdated', {
+              detail: updatedStats,
+            })
+          );
 
           console.log(`本地统计数据已更新: 增量 ${watchTimeIncrement}s`);
         } catch (error) {
@@ -2260,20 +2402,22 @@ export async function clearUserStats(): Promise<void> {
     }
 
     // 触发统计数据清除事件
-    window.dispatchEvent(new CustomEvent('userStatsUpdated', {
-      detail: {
-        username: getAuthInfoFromBrowserCookie()?.username || 'unknown',
-        totalWatchTime: 0,
-        totalPlays: 0,
-        lastPlayTime: 0,
-        recentRecords: [],
-        avgWatchTime: 0,
-        mostWatchedSource: '',
-        totalMovies: 0,
-        firstWatchDate: Date.now(),
-        lastUpdateTime: Date.now()
-      }
-    }));
+    window.dispatchEvent(
+      new CustomEvent('userStatsUpdated', {
+        detail: {
+          username: getAuthInfoFromBrowserCookie()?.username || 'unknown',
+          totalWatchTime: 0,
+          totalPlays: 0,
+          lastPlayTime: 0,
+          recentRecords: [],
+          avgWatchTime: 0,
+          mostWatchedSource: '',
+          totalMovies: 0,
+          firstWatchDate: Date.now(),
+          lastUpdateTime: Date.now(),
+        },
+      })
+    );
   } catch (error) {
     console.error('清除用户统计数据失败:', error);
     throw error;

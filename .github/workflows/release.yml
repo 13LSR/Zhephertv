@@ -1,0 +1,132 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # 匹配 v1.0.0, v1.0.1 等格式的标签
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整历史，用于生成变更日志
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG_NAME#v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "📦 Version: ${VERSION}"
+
+      - name: Update version files
+        run: |
+          # 运行 convert-changelog.js 脚本
+          # 脚本会检测到 GITHUB_ACTIONS 环境变量，自动更新版本文件
+          node scripts/convert-changelog.js
+
+          # 验证版本文件已更新
+          echo "=== VERSION.txt ==="
+          cat VERSION.txt
+          echo ""
+          echo "=== src/lib/version.ts ==="
+          grep CURRENT_VERSION src/lib/version.ts
+
+      - name: Extract changelog for current version
+        id: changelog
+        run: |
+          # 从 CHANGELOG 提取当前版本的更新内容
+          VERSION=${{ steps.get_version.outputs.version }}
+
+          # 使用 awk 提取当前版本的内容
+          CHANGELOG_CONTENT=$(awk "/## \[${VERSION}\]/,/## \[/" CHANGELOG | sed '$ d' | tail -n +2)
+
+          # 如果没有找到内容，使用默认消息
+          if [ -z "$CHANGELOG_CONTENT" ]; then
+            CHANGELOG_CONTENT="详见 [CHANGELOG](./CHANGELOG)"
+          fi
+
+          # 输出到 GitHub Actions
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Commit version updates
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # 检查是否有更改
+          if git diff --quiet; then
+            echo "没有需要提交的更改"
+          else
+            git add VERSION.txt src/lib/version.ts src/lib/changelog.ts
+            git commit -m "chore: bump version to ${{ steps.get_version.outputs.version }} [skip ci]"
+            git push origin HEAD:${GITHUB_REF#refs/heads/}
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.tag_name }}
+          name: Release ${{ steps.get_version.outputs.version }}
+          body: |
+            ## 🎉 Zhephertv ${{ steps.get_version.outputs.version }}
+
+            ${{ steps.changelog.outputs.content }}
+
+            ---
+
+            ### 📦 安装方式
+
+            **Docker 部署：**
+            ```bash
+            docker pull ghcr.io/${{ github.repository_owner }}/zhephertv:${{ steps.get_version.outputs.version }}
+            ```
+
+            **源码部署：**
+            ```bash
+            git clone -b ${{ steps.get_version.outputs.tag_name }} https://github.com/${{ github.repository }}.git
+            cd zhephertv
+            pnpm install
+            pnpm build
+            pnpm start
+            ```
+
+            ### 🔗 相关链接
+            - [完整变更日志](./CHANGELOG)
+            - [项目文档](./README.md)
+            - [问题反馈](https://github.com/${{ github.repository }}/issues)
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+
+      - name: Trigger Docker build
+        if: success()
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: release-published
+          client-payload: '{"version": "${{ steps.get_version.outputs.version }}", "tag": "${{ steps.get_version.outputs.tag_name }}"}'
