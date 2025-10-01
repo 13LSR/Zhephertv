@@ -60,14 +60,26 @@ export const UserMenu: React.FC = () => {
   const [authInfo, setAuthInfo] = useState<AuthInfo | null>(null);
   const [storageType, setStorageType] = useState<string>('localstorage');
   const [mounted, setMounted] = useState(false);
-  const [watchingUpdates, setWatchingUpdates] = useState<WatchingUpdate | null>(null);
-  const [playRecords, setPlayRecords] = useState<(PlayRecord & { key: string })[]>([]);
-  const [favorites, setFavorites] = useState<(Favorite & { key: string })[]>([]);
+  const [watchingUpdates, setWatchingUpdates] = useState<WatchingUpdate | null>(
+    null
+  );
+  const [playRecords, setPlayRecords] = useState<
+    (PlayRecord & { key: string })[]
+  >([]);
+  const [favorites, setFavorites] = useState<(Favorite & { key: string })[]>(
+    []
+  );
   const [hasUnreadUpdates, setHasUnreadUpdates] = useState(false);
 
   // Body 滚动锁定 - 使用 overflow 方式避免布局问题
   useEffect(() => {
-    if (isSettingsOpen || isChangePasswordOpen || isWatchingUpdatesOpen || isContinueWatchingOpen || isFavoritesOpen) {
+    if (
+      isSettingsOpen ||
+      isChangePasswordOpen ||
+      isWatchingUpdatesOpen ||
+      isContinueWatchingOpen ||
+      isFavoritesOpen
+    ) {
       const body = document.body;
       const html = document.documentElement;
 
@@ -80,26 +92,34 @@ export const UserMenu: React.FC = () => {
       html.style.overflow = 'hidden';
 
       return () => {
-
         // 恢复所有原始样式
         body.style.overflow = originalBodyOverflow;
         html.style.overflow = originalHtmlOverflow;
       };
     }
-  }, [isSettingsOpen, isChangePasswordOpen, isWatchingUpdatesOpen, isContinueWatchingOpen, isFavoritesOpen]);
+  }, [
+    isSettingsOpen,
+    isChangePasswordOpen,
+    isWatchingUpdatesOpen,
+    isContinueWatchingOpen,
+    isFavoritesOpen,
+  ]);
 
   // 设置相关状态
   const [defaultAggregateSearch, setDefaultAggregateSearch] = useState(true);
   const [doubanProxyUrl, setDoubanProxyUrl] = useState('');
-  const [enableOptimization, setEnableOptimization] = useState(false);
+  const [enableOptimization, setEnableOptimization] = useState(true);
   const [fluidSearch, setFluidSearch] = useState(true);
   const [liveDirectConnect, setLiveDirectConnect] = useState(false);
   const [doubanDataSource, setDoubanDataSource] = useState('direct');
   const [doubanImageProxyType, setDoubanImageProxyType] = useState('direct');
   const [doubanImageProxyUrl, setDoubanImageProxyUrl] = useState('');
-  const [continueWatchingMinProgress, setContinueWatchingMinProgress] = useState(5);
-  const [continueWatchingMaxProgress, setContinueWatchingMaxProgress] = useState(100);
-  const [enableContinueWatchingFilter, setEnableContinueWatchingFilter] = useState(false);
+  const [continueWatchingMinProgress, setContinueWatchingMinProgress] =
+    useState(5);
+  const [continueWatchingMaxProgress, setContinueWatchingMaxProgress] =
+    useState(100);
+  const [enableContinueWatchingFilter, setEnableContinueWatchingFilter] =
+    useState(false);
   const [isDoubanDropdownOpen, setIsDoubanDropdownOpen] = useState(false);
   const [isDoubanImageProxyDropdownOpen, setIsDoubanImageProxyDropdownOpen] =
     useState(false);
@@ -226,19 +246,31 @@ export const UserMenu: React.FC = () => {
         setLiveDirectConnect(JSON.parse(savedLiveDirectConnect));
       }
 
-      const savedContinueWatchingMinProgress = localStorage.getItem('continueWatchingMinProgress');
+      const savedContinueWatchingMinProgress = localStorage.getItem(
+        'continueWatchingMinProgress'
+      );
       if (savedContinueWatchingMinProgress !== null) {
-        setContinueWatchingMinProgress(parseInt(savedContinueWatchingMinProgress));
+        setContinueWatchingMinProgress(
+          parseInt(savedContinueWatchingMinProgress)
+        );
       }
 
-      const savedContinueWatchingMaxProgress = localStorage.getItem('continueWatchingMaxProgress');
+      const savedContinueWatchingMaxProgress = localStorage.getItem(
+        'continueWatchingMaxProgress'
+      );
       if (savedContinueWatchingMaxProgress !== null) {
-        setContinueWatchingMaxProgress(parseInt(savedContinueWatchingMaxProgress));
+        setContinueWatchingMaxProgress(
+          parseInt(savedContinueWatchingMaxProgress)
+        );
       }
 
-      const savedEnableContinueWatchingFilter = localStorage.getItem('enableContinueWatchingFilter');
+      const savedEnableContinueWatchingFilter = localStorage.getItem(
+        'enableContinueWatchingFilter'
+      );
       if (savedEnableContinueWatchingFilter !== null) {
-        setEnableContinueWatchingFilter(JSON.parse(savedEnableContinueWatchingFilter));
+        setEnableContinueWatchingFilter(
+          JSON.parse(savedEnableContinueWatchingFilter)
+        );
       }
     }
   }, []);
@@ -262,13 +294,17 @@ export const UserMenu: React.FC = () => {
   // 获取观看更新信息
   useEffect(() => {
     console.log('UserMenu watching-updates 检查条件:', {
-      'window': typeof window !== 'undefined',
+      window: typeof window !== 'undefined',
       'authInfo.username': authInfo?.username,
-      'storageType': storageType,
-      'storageType !== localstorage': storageType !== 'localstorage'
+      storageType: storageType,
+      'storageType !== localstorage': storageType !== 'localstorage',
     });
 
-    if (typeof window !== 'undefined' && authInfo?.username && storageType !== 'localstorage') {
+    if (
+      typeof window !== 'undefined' &&
+      authInfo?.username &&
+      storageType !== 'localstorage'
+    ) {
       console.log('开始加载 watching-updates 数据...');
 
       const updateWatchingUpdates = () => {
@@ -278,11 +314,14 @@ export const UserMenu: React.FC = () => {
 
         // 检测是否有新更新（只检查新剧集更新，不包括继续观看）
         if (updates && (updates.updatedCount || 0) > 0) {
-          const lastViewed = parseInt(localStorage.getItem('watchingUpdatesLastViewed') || '0');
+          const lastViewed = parseInt(
+            localStorage.getItem('watchingUpdatesLastViewed') || '0'
+          );
           const currentTime = Date.now();
 
           // 如果从未查看过，或者距离上次查看超过1分钟，认为有新更新
-          const hasNewUpdates = lastViewed === 0 || (currentTime - lastViewed > 60000);
+          const hasNewUpdates =
+            lastViewed === 0 || currentTime - lastViewed > 60000;
           setHasUnreadUpdates(hasNewUpdates);
         } else {
           setHasUnreadUpdates(false);
@@ -294,7 +333,9 @@ export const UserMenu: React.FC = () => {
         console.log('页面初始化，强制检查更新...');
         try {
           // 暂时清除缓存时间，强制检查一次
-          const lastCheckTime = localStorage.getItem('moontv_last_update_check');
+          const lastCheckTime = localStorage.getItem(
+            'moontv_last_update_check'
+          );
           localStorage.removeItem('moontv_last_update_check');
 
           // 执行检查
@@ -339,7 +380,11 @@ export const UserMenu: React.FC = () => {
 
   // 加载播放记录（优化版）
   useEffect(() => {
-    if (typeof window !== 'undefined' && authInfo?.username && storageType !== 'localstorage') {
+    if (
+      typeof window !== 'undefined' &&
+      authInfo?.username &&
+      storageType !== 'localstorage'
+    ) {
       const loadPlayRecords = async () => {
         try {
           const records = await getAllPlayRecords();
@@ -349,7 +394,7 @@ export const UserMenu: React.FC = () => {
           }));
 
           // 筛选真正需要继续观看的记录
-          const validPlayRecords = recordsArray.filter(record => {
+          const validPlayRecords = recordsArray.filter((record) => {
             const progress = getProgress(record);
 
             // 播放时间必须超过2分钟
@@ -359,11 +404,16 @@ export const UserMenu: React.FC = () => {
             if (!enableContinueWatchingFilter) return true;
 
             // 根据用户自定义的进度范围筛选
-            return progress >= continueWatchingMinProgress && progress <= continueWatchingMaxProgress;
+            return (
+              progress >= continueWatchingMinProgress &&
+              progress <= continueWatchingMaxProgress
+            );
           });
 
           // 按最后播放时间降序排列
-          const sortedRecords = validPlayRecords.sort((a, b) => b.save_time - a.save_time);
+          const sortedRecords = validPlayRecords.sort(
+            (a, b) => b.save_time - a.save_time
+          );
           setPlayRecords(sortedRecords.slice(0, 12)); // 只取最近的12个
         } catch (error) {
           console.error('加载播放记录失败:', error);
@@ -394,43 +444,70 @@ export const UserMenu: React.FC = () => {
           // 短暂延迟后重新获取播放记录，确保缓存已刷新
           setTimeout(async () => {
             const freshRecords = await getAllPlayRecords();
-            const recordsArray = Object.entries(freshRecords).map(([key, record]) => ({
-              ...record,
-              key,
-            }));
-            const validPlayRecords = recordsArray.filter(record => {
+            const recordsArray = Object.entries(freshRecords).map(
+              ([key, record]) => ({
+                ...record,
+                key,
+              })
+            );
+            const validPlayRecords = recordsArray.filter((record) => {
               const progress = getProgress(record);
               if (record.play_time < 120) return false;
               if (!enableContinueWatchingFilter) return true;
-              return progress >= continueWatchingMinProgress && progress <= continueWatchingMaxProgress;
+              return (
+                progress >= continueWatchingMinProgress &&
+                progress <= continueWatchingMaxProgress
+              );
             });
-            const sortedRecords = validPlayRecords.sort((a, b) => b.save_time - a.save_time);
+            const sortedRecords = validPlayRecords.sort(
+              (a, b) => b.save_time - a.save_time
+            );
             setPlayRecords(sortedRecords.slice(0, 12));
           }, 100);
         }
       });
 
       return () => {
-        window.removeEventListener('playRecordsUpdated', handlePlayRecordsUpdate);
+        window.removeEventListener(
+          'playRecordsUpdated',
+          handlePlayRecordsUpdate
+        );
         unsubscribeWatchingUpdates(); // 🔥 清理watching-updates订阅
       };
     }
-  }, [authInfo, storageType, enableContinueWatchingFilter, continueWatchingMinProgress, continueWatchingMaxProgress]);
+  }, [
+    authInfo,
+    storageType,
+    enableContinueWatchingFilter,
+    continueWatchingMinProgress,
+    continueWatchingMaxProgress,
+  ]);
 
   // 加载收藏数据
   useEffect(() => {
-    if (typeof window !== 'undefined' && authInfo?.username && storageType !== 'localstorage') {
+    if (
+      typeof window !== 'undefined' &&
+      authInfo?.username &&
+      storageType !== 'localstorage'
+    ) {
       const loadFavorites = async () => {
         try {
           const response = await fetch('/api/favorites');
           if (response.ok) {
-            const favoritesData = await response.json() as Record<string, Favorite>;
-            const favoritesArray = Object.entries(favoritesData).map(([key, favorite]) => ({
-              ...(favorite as Favorite),
-              key,
-            }));
+            const favoritesData = (await response.json()) as Record<
+              string,
+              Favorite
+            >;
+            const favoritesArray = Object.entries(favoritesData).map(
+              ([key, favorite]) => ({
+                ...(favorite as Favorite),
+                key,
+              })
+            );
             // 按保存时间降序排列
-            const sortedFavorites = favoritesArray.sort((a, b) => b.save_time - a.save_time);
+            const sortedFavorites = favoritesArray.sort(
+              (a, b) => b.save_time - a.save_time
+            );
             setFavorites(sortedFavorites);
           }
         } catch (error) {
@@ -516,9 +593,12 @@ export const UserMenu: React.FC = () => {
 
         // 重新计算未读状态
         if (updates && (updates.updatedCount || 0) > 0) {
-          const lastViewed = parseInt(localStorage.getItem('watchingUpdatesLastViewed') || '0');
+          const lastViewed = parseInt(
+            localStorage.getItem('watchingUpdatesLastViewed') || '0'
+          );
           const currentTime = Date.now();
-          const hasNewUpdates = lastViewed === 0 || (currentTime - lastViewed > 60000);
+          const hasNewUpdates =
+            lastViewed === 0 || currentTime - lastViewed > 60000;
           setHasUnreadUpdates(hasNewUpdates);
         } else {
           setHasUnreadUpdates(false);
@@ -610,19 +690,22 @@ export const UserMenu: React.FC = () => {
   };
 
   // 检查播放记录是否有新集数更新
-  const getNewEpisodesCount = (record: PlayRecord & { key: string }): number => {
+  const getNewEpisodesCount = (
+    record: PlayRecord & { key: string }
+  ): number => {
     if (!watchingUpdates || !watchingUpdates.updatedSeries) return 0;
 
     const { source, id } = parseKey(record.key);
 
     // 在watchingUpdates中查找匹配的剧集
-    const matchedSeries = watchingUpdates.updatedSeries.find(series =>
-      series.sourceKey === source &&
-      series.videoId === id &&
-      series.hasNewEpisode
+    const matchedSeries = watchingUpdates.updatedSeries.find(
+      (series) =>
+        series.sourceKey === source &&
+        series.videoId === id &&
+        series.hasNewEpisode
     );
 
-    return matchedSeries ? (matchedSeries.newEpisodes || 0) : 0;
+    return matchedSeries ? matchedSeries.newEpisodes || 0 : 0;
   };
 
   const handleChangePassword = () => {
@@ -746,7 +829,10 @@ export const UserMenu: React.FC = () => {
   const handleEnableContinueWatchingFilterToggle = (value: boolean) => {
     setEnableContinueWatchingFilter(value);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('enableContinueWatchingFilter', JSON.stringify(value));
+      localStorage.setItem(
+        'enableContinueWatchingFilter',
+        JSON.stringify(value)
+      );
     }
   };
 
@@ -816,7 +902,7 @@ export const UserMenu: React.FC = () => {
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('defaultAggregateSearch', JSON.stringify(true));
-      localStorage.setItem('enableOptimization', JSON.stringify(false));
+      localStorage.setItem('enableOptimization', JSON.stringify(true));
       localStorage.setItem('fluidSearch', JSON.stringify(defaultFluidSearch));
       localStorage.setItem('liveDirectConnect', JSON.stringify(false));
       localStorage.setItem('doubanProxyUrl', defaultDoubanProxy);
@@ -825,7 +911,10 @@ export const UserMenu: React.FC = () => {
       localStorage.setItem('doubanImageProxyUrl', defaultDoubanImageProxyUrl);
       localStorage.setItem('continueWatchingMinProgress', '5');
       localStorage.setItem('continueWatchingMaxProgress', '100');
-      localStorage.setItem('enableContinueWatchingFilter', JSON.stringify(false));
+      localStorage.setItem(
+        'enableContinueWatchingFilter',
+        JSON.stringify(false)
+      );
     }
   };
 
@@ -841,10 +930,12 @@ export const UserMenu: React.FC = () => {
   const showPlayStats = authInfo?.username && storageType !== 'localstorage';
 
   // 检查是否显示更新提醒按钮（登录用户且非localstorage存储就显示）
-  const showWatchingUpdates = authInfo?.username && storageType !== 'localstorage';
+  const showWatchingUpdates =
+    authInfo?.username && storageType !== 'localstorage';
 
   // 检查是否有实际更新（用于显示红点）- 只检查新剧集更新
-  const hasActualUpdates = watchingUpdates && (watchingUpdates.updatedCount || 0) > 0;
+  const hasActualUpdates =
+    watchingUpdates && (watchingUpdates.updatedCount || 0) > 0;
 
   // 计算更新数量（只统计新剧集更新）
   const totalUpdates = watchingUpdates?.updatedCount || 0;
@@ -856,7 +947,7 @@ export const UserMenu: React.FC = () => {
     watchingUpdates,
     showWatchingUpdates,
     hasActualUpdates,
-    totalUpdates
+    totalUpdates,
   });
 
   // 角色中文映射
@@ -892,12 +983,13 @@ export const UserMenu: React.FC = () => {
                 当前用户
               </span>
               <span
-                className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${(authInfo?.role || 'user') === 'owner'
-                  ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                  : (authInfo?.role || 'user') === 'admin'
+                className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                  (authInfo?.role || 'user') === 'owner'
+                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                    : (authInfo?.role || 'user') === 'admin'
                     ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                     : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                  }`}
+                }`}
               >
                 {getRoleText(authInfo?.role || 'user')}
               </span>
@@ -952,7 +1044,9 @@ export const UserMenu: React.FC = () => {
               <PlayCircle className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>继续观看</span>
               {playRecords.length > 0 && (
-                <span className='ml-auto text-xs text-gray-400'>{playRecords.length}</span>
+                <span className='ml-auto text-xs text-gray-400'>
+                  {playRecords.length}
+                </span>
               )}
             </button>
           )}
@@ -966,7 +1060,9 @@ export const UserMenu: React.FC = () => {
               <Heart className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>我的收藏</span>
               {favorites.length > 0 && (
-                <span className='ml-auto text-xs text-gray-400'>{favorites.length}</span>
+                <span className='ml-auto text-xs text-gray-400'>
+                  {favorites.length}
+                </span>
               )}
             </button>
           )}
@@ -990,7 +1086,9 @@ export const UserMenu: React.FC = () => {
             >
               <BarChart3 className='w-4 h-4 text-gray-500 dark:text-gray-400' />
               <span className='font-medium'>
-                {authInfo?.role === 'owner' || authInfo?.role === 'admin' ? '播放统计' : '个人统计'}
+                {authInfo?.role === 'owner' || authInfo?.role === 'admin'
+                  ? '播放统计'
+                  : '个人统计'}
               </span>
             </button>
           )}
@@ -1053,12 +1151,13 @@ export const UserMenu: React.FC = () => {
                 updateStatus &&
                 updateStatus !== UpdateStatus.FETCH_FAILED && (
                   <div
-                    className={`w-2 h-2 rounded-full -translate-y-2 ${updateStatus === UpdateStatus.HAS_UPDATE
-                      ? 'bg-yellow-500'
-                      : updateStatus === UpdateStatus.NO_UPDATE
+                    className={`w-2 h-2 rounded-full -translate-y-2 ${
+                      updateStatus === UpdateStatus.HAS_UPDATE
+                        ? 'bg-yellow-500'
+                        : updateStatus === UpdateStatus.NO_UPDATE
                         ? 'bg-green-400'
                         : ''
-                      }`}
+                    }`}
                   ></div>
                 )}
             </div>
@@ -1089,9 +1188,7 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 设置面板 */}
-      <div
-        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] flex flex-col'
-      >
+      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] flex flex-col'>
         {/* 内容容器 - 独立的滚动区域 */}
         <div
           className='flex-1 p-6 overflow-y-auto'
@@ -1153,8 +1250,9 @@ export const UserMenu: React.FC = () => {
                 {/* 下拉箭头 */}
                 <div className='absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none'>
                   <ChevronDown
-                    className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isDoubanDropdownOpen ? 'rotate-180' : ''
-                      }`}
+                    className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
+                      isDoubanDropdownOpen ? 'rotate-180' : ''
+                    }`}
                   />
                 </div>
 
@@ -1169,10 +1267,11 @@ export const UserMenu: React.FC = () => {
                           handleDoubanDataSourceChange(option.value);
                           setIsDoubanDropdownOpen(false);
                         }}
-                        className={`w-full px-3 py-2.5 text-left text-sm transition-colors duration-150 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 ${doubanDataSource === option.value
-                          ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                          : 'text-gray-900 dark:text-gray-100'
-                          }`}
+                        className={`w-full px-3 py-2.5 text-left text-sm transition-colors duration-150 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          doubanDataSource === option.value
+                            ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                            : 'text-gray-900 dark:text-gray-100'
+                        }`}
                       >
                         <span className='truncate'>{option.label}</span>
                         {doubanDataSource === option.value && (
@@ -1190,7 +1289,10 @@ export const UserMenu: React.FC = () => {
                   <button
                     type='button'
                     onClick={() =>
-                      window.open(getThanksInfo(doubanDataSource)!.url, '_blank')
+                      window.open(
+                        getThanksInfo(doubanDataSource)!.url,
+                        '_blank'
+                      )
                     }
                     className='flex items-center justify-center gap-1.5 w-full px-3 text-xs text-gray-500 dark:text-gray-400 cursor-pointer'
                   >
@@ -1258,8 +1360,9 @@ export const UserMenu: React.FC = () => {
                 {/* 下拉箭头 */}
                 <div className='absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none'>
                   <ChevronDown
-                    className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isDoubanDropdownOpen ? 'rotate-180' : ''
-                      }`}
+                    className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
+                      isDoubanDropdownOpen ? 'rotate-180' : ''
+                    }`}
                   />
                 </div>
 
@@ -1274,10 +1377,11 @@ export const UserMenu: React.FC = () => {
                           handleDoubanImageProxyTypeChange(option.value);
                           setIsDoubanImageProxyDropdownOpen(false);
                         }}
-                        className={`w-full px-3 py-2.5 text-left text-sm transition-colors duration-150 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 ${doubanImageProxyType === option.value
-                          ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                          : 'text-gray-900 dark:text-gray-100'
-                          }`}
+                        className={`w-full px-3 py-2.5 text-left text-sm transition-colors duration-150 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          doubanImageProxyType === option.value
+                            ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                            : 'text-gray-900 dark:text-gray-100'
+                        }`}
                       >
                         <span className='truncate'>{option.label}</span>
                         {doubanImageProxyType === option.value && (
@@ -1425,7 +1529,9 @@ export const UserMenu: React.FC = () => {
                     type='checkbox'
                     className='sr-only peer'
                     checked={liveDirectConnect}
-                    onChange={(e) => handleLiveDirectConnectToggle(e.target.checked)}
+                    onChange={(e) =>
+                      handleLiveDirectConnectToggle(e.target.checked)
+                    }
                   />
                   <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
                   <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
@@ -1453,7 +1559,11 @@ export const UserMenu: React.FC = () => {
                       type='checkbox'
                       className='sr-only peer'
                       checked={enableContinueWatchingFilter}
-                      onChange={(e) => handleEnableContinueWatchingFilterToggle(e.target.checked)}
+                      onChange={(e) =>
+                        handleEnableContinueWatchingFilterToggle(
+                          e.target.checked
+                        )
+                      }
                     />
                     <div className='w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
                     <div className='absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform peer-checked:translate-x-5'></div>
@@ -1483,7 +1593,10 @@ export const UserMenu: React.FC = () => {
                         className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                         value={continueWatchingMinProgress}
                         onChange={(e) => {
-                          const value = Math.max(0, Math.min(100, parseInt(e.target.value) || 0));
+                          const value = Math.max(
+                            0,
+                            Math.min(100, parseInt(e.target.value) || 0)
+                          );
                           handleContinueWatchingMinProgressChange(value);
                         }}
                       />
@@ -1501,7 +1614,10 @@ export const UserMenu: React.FC = () => {
                         className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                         value={continueWatchingMaxProgress}
                         onChange={(e) => {
-                          const value = Math.max(0, Math.min(100, parseInt(e.target.value) || 100));
+                          const value = Math.max(
+                            0,
+                            Math.min(100, parseInt(e.target.value) || 100)
+                          );
                           handleContinueWatchingMaxProgressChange(value);
                         }}
                       />
@@ -1510,7 +1626,8 @@ export const UserMenu: React.FC = () => {
 
                   {/* 当前范围提示 */}
                   <div className='text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg'>
-                    当前设置：显示播放进度在 {continueWatchingMinProgress}% - {continueWatchingMaxProgress}% 之间的内容
+                    当前设置：显示播放进度在 {continueWatchingMinProgress}% -{' '}
+                    {continueWatchingMaxProgress}% 之间的内容
                   </div>
                 </>
               )}
@@ -1556,9 +1673,7 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 修改密码面板 */}
-      <div
-        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] overflow-hidden'
-      >
+      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] overflow-hidden'>
         {/* 内容容器 - 独立的滚动区域 */}
         <div
           className='h-full p-6'
@@ -1673,9 +1788,7 @@ export const UserMenu: React.FC = () => {
       />
 
       {/* 更新弹窗 */}
-      <div
-        className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] flex flex-col'
-      >
+      <div className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl shadow-xl z-[1001] flex flex-col'>
         {/* 内容容器 - 独立的滚动区域 */}
         <div
           className='flex-1 p-6 overflow-y-auto'
@@ -1723,48 +1836,58 @@ export const UserMenu: React.FC = () => {
               </div>
             )}
             {/* 有新集数的剧集 */}
-            {watchingUpdates && watchingUpdates.updatedSeries.filter(series => series.hasNewEpisode).length > 0 && (
-              <div>
-                <div className='flex items-center gap-2 mb-4'>
-                  <h4 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                    新集更新
-                  </h4>
-                  <div className='flex items-center gap-1'>
-                    <div className='w-2 h-2 bg-red-500 rounded-full animate-pulse'></div>
-                    <span className='text-sm text-red-500 font-medium'>
-                      {watchingUpdates.updatedSeries.filter(series => series.hasNewEpisode).length}部剧集有更新
-                    </span>
+            {watchingUpdates &&
+              watchingUpdates.updatedSeries.filter(
+                (series) => series.hasNewEpisode
+              ).length > 0 && (
+                <div>
+                  <div className='flex items-center gap-2 mb-4'>
+                    <h4 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                      新集更新
+                    </h4>
+                    <div className='flex items-center gap-1'>
+                      <div className='w-2 h-2 bg-red-500 rounded-full animate-pulse'></div>
+                      <span className='text-sm text-red-500 font-medium'>
+                        {
+                          watchingUpdates.updatedSeries.filter(
+                            (series) => series.hasNewEpisode
+                          ).length
+                        }
+                        部剧集有更新
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
+                    {watchingUpdates.updatedSeries
+                      .filter((series) => series.hasNewEpisode)
+                      .map((series, index) => (
+                        <div
+                          key={`new-${series.title}_${series.year}_${index}`}
+                          className='relative'
+                        >
+                          <VideoCard
+                            title={series.title}
+                            poster={series.cover}
+                            year={series.year}
+                            source={series.sourceKey}
+                            source_name={series.source_name}
+                            episodes={series.totalEpisodes}
+                            currentEpisode={series.currentEpisode}
+                            id={series.videoId}
+                            onDelete={undefined}
+                            type={series.totalEpisodes > 1 ? 'tv' : ''}
+                            from='playrecord'
+                          />
+                          {/* 新集数徽章 */}
+                          <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-50'>
+                            +{series.newEpisodes}集
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 </div>
-
-                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
-                  {watchingUpdates.updatedSeries
-                    .filter(series => series.hasNewEpisode)
-                    .map((series, index) => (
-                      <div key={`new-${series.title}_${series.year}_${index}`} className='relative'>
-                        <VideoCard
-                          title={series.title}
-                          poster={series.cover}
-                          year={series.year}
-                          source={series.sourceKey}
-                          source_name={series.source_name}
-                          episodes={series.totalEpisodes}
-                          currentEpisode={series.currentEpisode}
-                          id={series.videoId}
-                          onDelete={undefined}
-                          type={series.totalEpisodes > 1 ? 'tv' : ''}
-                          from="playrecord"
-                        />
-                        {/* 新集数徽章 */}
-                        <div className='absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg z-50'>
-                          +{series.newEpisodes}集
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-
+              )}
           </div>
 
           {/* 底部说明 */}
@@ -1849,7 +1972,9 @@ export const UserMenu: React.FC = () => {
                         <div className='flex-1 bg-gray-600 rounded-full h-1'>
                           <div
                             className='bg-blue-500 h-1 rounded-full transition-all'
-                            style={{ width: `${Math.min(getProgress(record), 100)}%` }}
+                            style={{
+                              width: `${Math.min(getProgress(record), 100)}%`,
+                            }}
                           />
                         </div>
                         <span className='text-xs text-white font-medium'>
@@ -1867,12 +1992,13 @@ export const UserMenu: React.FC = () => {
           {playRecords.length === 0 && (
             <div className='text-center py-12'>
               <PlayCircle className='w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4' />
-              <p className='text-gray-500 dark:text-gray-400 mb-2'>暂无需要继续观看的内容</p>
+              <p className='text-gray-500 dark:text-gray-400 mb-2'>
+                暂无需要继续观看的内容
+              </p>
               <p className='text-xs text-gray-400 dark:text-gray-500'>
                 {enableContinueWatchingFilter
                   ? `观看进度在${continueWatchingMinProgress}%-${continueWatchingMaxProgress}%之间且播放时间超过2分钟的内容会显示在这里`
-                  : '播放时间超过2分钟的所有内容都会显示在这里'
-                }
+                  : '播放时间超过2分钟的所有内容都会显示在这里'}
               </p>
             </div>
           )}
@@ -1946,10 +2072,13 @@ export const UserMenu: React.FC = () => {
                   {/* 收藏时间标签 */}
                   <div className='absolute top-2 right-2 bg-black/50 rounded px-2 py-1'>
                     <span className='text-xs text-white font-medium'>
-                      {new Date(favorite.save_time).toLocaleDateString('zh-CN', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {new Date(favorite.save_time).toLocaleDateString(
+                        'zh-CN',
+                        {
+                          month: 'short',
+                          day: 'numeric',
+                        }
+                      )}
                     </span>
                   </div>
                   {/* 收藏心形图标 */}
@@ -1994,7 +2123,8 @@ export const UserMenu: React.FC = () => {
           <User className='w-full h-full' />
         </button>
         {/* 统一更新提醒点：版本更新或剧集更新都显示橙色点 */}
-        {((updateStatus === UpdateStatus.HAS_UPDATE) || (hasUnreadUpdates && totalUpdates > 0)) && (
+        {(updateStatus === UpdateStatus.HAS_UPDATE ||
+          (hasUnreadUpdates && totalUpdates > 0)) && (
           <div className='absolute top-[2px] right-[2px] w-2 h-2 bg-yellow-500 rounded-full'></div>
         )}
       </div>

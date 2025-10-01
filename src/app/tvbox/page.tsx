@@ -249,7 +249,6 @@ export default function TVBoxConfigPage() {
                 <li>• 自动同步 Zhephertv 的所有视频源</li>
                 <li>• 支持搜索和快速搜索</li>
                 <li>• 支持分类筛选</li>
-                <li>• 内置视频解析接口</li>
                 <li>• 广告过滤规则</li>
               </ul>
             </div>

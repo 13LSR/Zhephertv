@@ -7,7 +7,17 @@
       "Bash(git commit:*)",
       "Bash(rm:*)",
       "Bash(pnpm typecheck)",
-      "Bash(pnpm lint:*)"
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm gen:manifest:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(redis-cli:*)",
+      "Bash(taskkill:*)",
+      "mcp__Playwright__browser_navigate",
+      "mcp__Playwright__browser_type",
+      "mcp__Playwright__browser_snapshot",
+      "mcp__Playwright__browser_click",
+      "mcp__Playwright__browser_wait_for",
+      "Read(//d/byzxj/R/program/git/1/**)"
     ],
     "deny": [],
     "ask": []

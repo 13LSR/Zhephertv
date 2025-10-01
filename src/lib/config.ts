@@ -11,7 +11,6 @@ export interface ApiSite {
   detail?: string;
 }
 
-
 interface ConfigFileStruct {
   cache_time?: number;
   api_site?: {
@@ -46,7 +45,6 @@ export const API_CONFIG = {
 
 // 在模块加载时根据环境决定配置来源
 let cachedConfig: AdminConfig;
-
 
 // 从配置文件补充管理员配置
 export function refineConfig(adminConfig: AdminConfig): AdminConfig {
@@ -133,19 +131,21 @@ export function refineConfig(adminConfig: AdminConfig): AdminConfig {
   // 将 Map 转换回数组
   adminConfig.CustomCategories = Array.from(currentCustomCategories.values());
 
-
   return adminConfig;
 }
 
-async function getInitConfig(configFile: string, subConfig: {
-  URL: string;
-  AutoUpdate: boolean;
-  LastCheck: string;
-} = {
-    URL: "",
+async function getInitConfig(
+  configFile: string,
+  subConfig: {
+    URL: string;
+    AutoUpdate: boolean;
+    LastCheck: string;
+  } = {
+    URL: '',
     AutoUpdate: false,
-    LastCheck: "",
-  }): Promise<AdminConfig> {
+    LastCheck: '',
+  }
+): Promise<AdminConfig> {
   let cfgFile: ConfigFileStruct;
   try {
     cfgFile = JSON.parse(configFile) as ConfigFileStruct;
@@ -156,23 +156,21 @@ async function getInitConfig(configFile: string, subConfig: {
     ConfigFile: configFile,
     ConfigSubscribtion: subConfig,
     SiteConfig: {
-      SiteName: process.env.NEXT_PUBLIC_SITE_NAME || 'Zhephertv',
+      SiteName: process.env.NEXT_PUBLIC_SITE_NAME || 'ZhepherTV',
       Announcement:
         process.env.ANNOUNCEMENT ||
         '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。',
       SearchDownstreamMaxPage:
         Number(process.env.NEXT_PUBLIC_SEARCH_MAX_PAGE) || 5,
       SiteInterfaceCacheTime: cfgFile.cache_time || 7200,
-      DoubanProxyType:
-        process.env.NEXT_PUBLIC_DOUBAN_PROXY_TYPE || 'direct',
+      DoubanProxyType: process.env.NEXT_PUBLIC_DOUBAN_PROXY_TYPE || 'direct',
       DoubanProxy: process.env.NEXT_PUBLIC_DOUBAN_PROXY || '',
       DoubanImageProxyType:
         process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY_TYPE || 'direct',
       DoubanImageProxy: process.env.NEXT_PUBLIC_DOUBAN_IMAGE_PROXY || '',
       DisableYellowFilter:
         process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true',
-      FluidSearch:
-        process.env.NEXT_PUBLIC_FLUID_SEARCH !== 'false',
+      FluidSearch: process.env.NEXT_PUBLIC_FLUID_SEARCH !== 'false',
       // TMDB配置默认值
       TMDBApiKey: process.env.TMDB_API_KEY || '',
       TMDBLanguage: 'zh-CN',
@@ -193,11 +191,13 @@ async function getInitConfig(configFile: string, subConfig: {
   } catch (e) {
     console.error('获取用户列表失败:', e);
   }
-  const allUsers = userNames.filter((u) => u !== process.env.USERNAME).map((u) => ({
-    username: u,
-    role: 'user',
-    banned: false,
-  }));
+  const allUsers = userNames
+    .filter((u) => u !== process.env.USERNAME)
+    .map((u) => ({
+      username: u,
+      role: 'user',
+      banned: false,
+    }));
   allUsers.unshift({
     username: process.env.USERNAME!,
     role: 'owner',
@@ -228,7 +228,6 @@ async function getInitConfig(configFile: string, subConfig: {
     });
   });
 
-
   return adminConfig;
 }
 
@@ -248,7 +247,7 @@ export async function getConfig(): Promise<AdminConfig> {
 
   // db 中无配置，执行一次初始化
   if (!adminConfig) {
-    adminConfig = await getInitConfig("");
+    adminConfig = await getInitConfig('');
   }
   adminConfig = configSelfCheck(adminConfig);
   cachedConfig = adminConfig;
@@ -266,7 +265,10 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
   if (!adminConfig.UserConfig) {
     adminConfig.UserConfig = { AllowRegister: true, Users: [] };
   }
-  if (!adminConfig.UserConfig.Users || !Array.isArray(adminConfig.UserConfig.Users)) {
+  if (
+    !adminConfig.UserConfig.Users ||
+    !Array.isArray(adminConfig.UserConfig.Users)
+  ) {
     adminConfig.UserConfig.Users = [];
   }
   // 确保 AllowRegister 有默认值
@@ -276,32 +278,34 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
   if (!adminConfig.SourceConfig || !Array.isArray(adminConfig.SourceConfig)) {
     adminConfig.SourceConfig = [];
   }
-  if (!adminConfig.CustomCategories || !Array.isArray(adminConfig.CustomCategories)) {
+  if (
+    !adminConfig.CustomCategories ||
+    !Array.isArray(adminConfig.CustomCategories)
+  ) {
     adminConfig.CustomCategories = [];
   }
 
   // 确保网盘搜索配置有默认值
   if (!adminConfig.NetDiskConfig) {
     adminConfig.NetDiskConfig = {
-      enabled: true,                                    // 默认启用
-      pansouUrl: 'https://so.252035.xyz',               // 默认公益服务
-      timeout: 30,                                      // 默认30秒超时
-      enabledCloudTypes: ['baidu', 'aliyun', 'quark'] // 默认只启用百度、阿里、夸克三大主流网盘
+      enabled: true, // 默认启用
+      pansouUrl: 'https://so.252035.xyz', // 默认公益服务
+      timeout: 30, // 默认30秒超时
+      enabledCloudTypes: ['baidu', 'aliyun', 'quark'], // 默认只启用百度、阿里、夸克三大主流网盘
     };
   }
 
   // 确保AI推荐配置有默认值
   if (!adminConfig.AIRecommendConfig) {
     adminConfig.AIRecommendConfig = {
-      enabled: false,                                   // 默认关闭
-      apiUrl: 'https://api.openai.com/v1',             // 默认OpenAI API
-      apiKey: '',                                       // 默认为空，需要管理员配置
-      model: 'gpt-3.5-turbo',                          // 默认模型
-      temperature: 0.7,                                // 默认温度
-      maxTokens: 3000                                  // 默认最大token数
+      enabled: false, // 默认关闭
+      apiUrl: 'https://api.openai.com/v1', // 默认OpenAI API
+      apiKey: '', // 默认为空，需要管理员配置
+      model: 'gpt-3.5-turbo', // 默认模型
+      temperature: 0.7, // 默认温度
+      maxTokens: 3000, // 默认最大token数
     };
   }
-
 
   // 站长变更自检
   const ownerUser = process.env.USERNAME;
@@ -316,8 +320,12 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
     return true;
   });
   // 过滤站长
-  const originOwnerCfg = adminConfig.UserConfig.Users.find((u) => u.username === ownerUser);
-  adminConfig.UserConfig.Users = adminConfig.UserConfig.Users.filter((user) => user.username !== ownerUser);
+  const originOwnerCfg = adminConfig.UserConfig.Users.find(
+    (u) => u.username === ownerUser
+  );
+  adminConfig.UserConfig.Users = adminConfig.UserConfig.Users.filter(
+    (user) => user.username !== ownerUser
+  );
   // 其他用户不得拥有 owner 权限
   adminConfig.UserConfig.Users.forEach((user) => {
     if (user.role === 'owner') {
@@ -345,14 +353,15 @@ export function configSelfCheck(adminConfig: AdminConfig): AdminConfig {
 
   // 自定义分类去重
   const seenCustomCategoryKeys = new Set<string>();
-  adminConfig.CustomCategories = adminConfig.CustomCategories.filter((category) => {
-    if (seenCustomCategoryKeys.has(category.query + category.type)) {
-      return false;
+  adminConfig.CustomCategories = adminConfig.CustomCategories.filter(
+    (category) => {
+      if (seenCustomCategoryKeys.has(category.query + category.type)) {
+        return false;
+      }
+      seenCustomCategoryKeys.add(category.query + category.type);
+      return true;
     }
-    seenCustomCategoryKeys.add(category.query + category.type);
-    return true;
-  });
-
+  );
 
   return adminConfig;
 }
@@ -367,7 +376,10 @@ export async function resetConfig() {
   if (!originConfig) {
     originConfig = {} as AdminConfig;
   }
-  const adminConfig = await getInitConfig(originConfig.ConfigFile, originConfig.ConfigSubscribtion);
+  const adminConfig = await getInitConfig(
+    originConfig.ConfigFile,
+    originConfig.ConfigSubscribtion
+  );
   cachedConfig = adminConfig;
   await db.saveAdminConfig(adminConfig);
 
@@ -395,12 +407,14 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
   // 优先根据用户自己的 enabledApis 配置查找
   if (userConfig.enabledApis && userConfig.enabledApis.length > 0) {
     const userApiSitesSet = new Set(userConfig.enabledApis);
-    return allApiSites.filter((s) => userApiSitesSet.has(s.key)).map((s) => ({
-      key: s.key,
-      name: s.name,
-      api: s.api,
-      detail: s.detail,
-    }));
+    return allApiSites
+      .filter((s) => userApiSitesSet.has(s.key))
+      .map((s) => ({
+        key: s.key,
+        name: s.name,
+        api: s.api,
+        detail: s.detail,
+      }));
   }
 
   // 如果没有 enabledApis 配置，则根据 tags 查找
@@ -408,20 +422,24 @@ export async function getAvailableApiSites(user?: string): Promise<ApiSite[]> {
     const enabledApisFromTags = new Set<string>();
 
     // 遍历用户的所有 tags，收集对应的 enabledApis
-    userConfig.tags.forEach(tagName => {
-      const tagConfig = config.UserConfig.Tags?.find(t => t.name === tagName);
+    userConfig.tags.forEach((tagName) => {
+      const tagConfig = config.UserConfig.Tags?.find((t) => t.name === tagName);
       if (tagConfig && tagConfig.enabledApis) {
-        tagConfig.enabledApis.forEach(apiKey => enabledApisFromTags.add(apiKey));
+        tagConfig.enabledApis.forEach((apiKey) =>
+          enabledApisFromTags.add(apiKey)
+        );
       }
     });
 
     if (enabledApisFromTags.size > 0) {
-      return allApiSites.filter((s) => enabledApisFromTags.has(s.key)).map((s) => ({
-        key: s.key,
-        name: s.name,
-        api: s.api,
-        detail: s.detail,
-      }));
+      return allApiSites
+        .filter((s) => enabledApisFromTags.has(s.key))
+        .map((s) => ({
+          key: s.key,
+          name: s.name,
+          api: s.api,
+          detail: s.detail,
+        }));
     }
   }
 
@@ -446,8 +464,10 @@ export async function hasSpecialFeaturePermission(
     }
 
     // 使用提供的配置或获取新配置
-    const config = providedConfig || await getConfig();
-    const userConfig = config.UserConfig.Users.find((u) => u.username === username);
+    const config = providedConfig || (await getConfig());
+    const userConfig = config.UserConfig.Users.find(
+      (u) => u.username === username
+    );
 
     // 如果用户不在配置中，检查是否是新注册用户
     if (!userConfig) {
@@ -468,10 +488,20 @@ export async function hasSpecialFeaturePermission(
     }
 
     // 如果没有直接配置，检查用户组 tags 的权限
-    if (userConfig.tags && userConfig.tags.length > 0 && config.UserConfig.Tags) {
+    if (
+      userConfig.tags &&
+      userConfig.tags.length > 0 &&
+      config.UserConfig.Tags
+    ) {
       for (const tagName of userConfig.tags) {
-        const tagConfig = config.UserConfig.Tags.find(t => t.name === tagName);
-        if (tagConfig && tagConfig.enabledApis && tagConfig.enabledApis.includes(feature)) {
+        const tagConfig = config.UserConfig.Tags.find(
+          (t) => t.name === tagName
+        );
+        if (
+          tagConfig &&
+          tagConfig.enabledApis &&
+          tagConfig.enabledApis.includes(feature)
+        ) {
           return true;
         }
       }
