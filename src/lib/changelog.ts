@@ -11,6 +11,20 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '1.0.2',
+    date: '2025-10-02',
+    added: [
+      // 无新增内容
+    ],
+    changed: [
+      // 无变更内容
+    ],
+    fixed: [
+      '🐛 修复移动端AI推荐按钮闪现后立即消失的问题',
+      '✨ 优化AI功能状态检查逻辑,避免初始渲染时的按钮闪烁',
+    ],
+  },
+  {
     version: '1.0.1',
     date: '2025-10-01',
     added: [
