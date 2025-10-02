@@ -82,11 +82,21 @@ jobs:
           if git diff --quiet; then
             echo "没有需要提交的更改"
           else
+            # 获取最新的 main 分支
+            git fetch origin main:main
+
+            # 切换到 main 分支
+            git checkout main
+
+            # 重新运行脚本以生成版本文件
+            node scripts/convert-changelog.js
+
+            # 添加并提交更改
             git add VERSION.txt src/lib/version.ts src/lib/changelog.ts
             git commit -m "chore: bump version to ${{ steps.get_version.outputs.version }} [skip ci]"
 
-            # 推送到默认分支(main)
-            git push origin HEAD:main
+            # 推送到 main 分支
+            git push origin main
           fi
 
       - name: Create GitHub Release
