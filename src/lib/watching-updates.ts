@@ -237,7 +237,7 @@ export async function checkWatchingUpdates(): Promise<void> {
 }
 
 /**
- * 检查单个剧集的更新状态（调用真实API）
+ * 检查单个剧集的更新状态(调用真实API)
  */
 async function checkSingleRecordUpdate(
   record: PlayRecord,
@@ -252,36 +252,45 @@ async function checkSingleRecordUpdate(
 }> {
   try {
     let sourceKey = record.source_name;
+    let apiUrl = '';
 
-    // 先尝试获取可用数据源进行映射
-    try {
-      const sourcesResponse = await fetch('/api/sources');
-      if (sourcesResponse.ok) {
-        const sources = await sourcesResponse.json();
+    // 检查是否为短剧
+    if (storageSourceName === 'shortdrama' || sourceKey === '短剧') {
+      // 短剧使用专门的API
+      apiUrl = `/api/shortdrama/detail?id=${videoId}&episode=1`;
+      console.log(`${record.title} (短剧) 调用短剧API获取最新详情:`, apiUrl);
+    } else {
+      // 先尝试获取可用数据源进行映射
+      try {
+        const sourcesResponse = await fetch('/api/sources');
+        if (sourcesResponse.ok) {
+          const sources = await sourcesResponse.json();
 
-        // 查找匹配的数据源
-        const matchedSource = sources.find(
-          (source: any) =>
-            source.key === record.source_name ||
-            source.name === record.source_name
-        );
-
-        if (matchedSource) {
-          sourceKey = matchedSource.key;
-          console.log(`映射数据源: ${record.source_name} -> ${sourceKey}`);
-        } else {
-          console.warn(
-            `找不到数据源 ${record.source_name} 的映射，使用原始名称`
+          // 查找匹配的数据源
+          const matchedSource = sources.find(
+            (source: any) =>
+              source.key === record.source_name ||
+              source.name === record.source_name
           );
+
+          if (matchedSource) {
+            sourceKey = matchedSource.key;
+            console.log(`映射数据源: ${record.source_name} -> ${sourceKey}`);
+          } else {
+            console.warn(
+              `找不到数据源 ${record.source_name} 的映射，使用原始名称`
+            );
+          }
         }
+      } catch (mappingError) {
+        console.warn('数据源映射失败，使用原始名称:', mappingError);
       }
-    } catch (mappingError) {
-      console.warn('数据源映射失败，使用原始名称:', mappingError);
+
+      // 使用映射后的key调用API(API已默认不缓存，确保集数信息实时更新)
+      apiUrl = `/api/detail?source=${sourceKey}&id=${videoId}`;
+      console.log(`${record.title} 调用API获取最新详情:`, apiUrl);
     }
 
-    // 使用映射后的key调用API（API已默认不缓存，确保集数信息实时更新）
-    const apiUrl = `/api/detail?source=${sourceKey}&id=${videoId}`;
-    console.log(`${record.title} 调用API获取最新详情:`, apiUrl);
     const response = await fetch(apiUrl);
     if (!response.ok) {
       console.warn(`获取${record.title}详情失败:`, response.status);
