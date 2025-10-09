@@ -28,7 +28,9 @@ export async function GET(request: NextRequest) {
   const username = authInfo.username;
 
   try {
-    const config = await getConfig();
+    // Upstash 环境下每次都强制从数据库读取，避免 serverless 实例缓存问题
+    const forceRefresh = storageType === 'upstash';
+    const config = await getConfig(forceRefresh);
     const result: AdminConfigResult = {
       Role: 'owner',
       Config: config,

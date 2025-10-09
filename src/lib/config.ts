@@ -231,9 +231,13 @@ async function getInitConfig(
   return adminConfig;
 }
 
-export async function getConfig(): Promise<AdminConfig> {
-  // 直接使用内存缓存
-  if (cachedConfig) {
+export async function getConfig(forceRefresh = false): Promise<AdminConfig> {
+  // 判断存储类型，如果是 Upstash 则禁用内存缓存（因为 serverless 环境下缓存不可靠）
+  const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
+  const useMemoryCache = storageType !== 'upstash';
+
+  // 如果允许使用内存缓存且未强制刷新，则直接返回缓存
+  if (useMemoryCache && cachedConfig && !forceRefresh) {
     return cachedConfig;
   }
 
@@ -250,9 +254,14 @@ export async function getConfig(): Promise<AdminConfig> {
     adminConfig = await getInitConfig('');
   }
   adminConfig = configSelfCheck(adminConfig);
-  cachedConfig = adminConfig;
-  db.saveAdminConfig(cachedConfig);
-  return cachedConfig;
+
+  // 只有在允许的情况下才更新内存缓存
+  if (useMemoryCache) {
+    cachedConfig = adminConfig;
+  }
+
+  db.saveAdminConfig(cachedConfig || adminConfig);
+  return adminConfig;
 }
 
 // 清除配置缓存，强制重新从数据库读取

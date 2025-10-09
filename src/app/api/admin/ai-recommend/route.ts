@@ -122,8 +122,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 获取当前配置
-    const adminConfig = await getConfig();
+    // 获取当前配置（Upstash环境下强制刷新）
+    const forceRefresh = storageType === 'upstash';
+    const adminConfig = await getConfig(forceRefresh);
 
     // 权限校验
     if (username !== process.env.USERNAME) {
@@ -152,11 +153,18 @@ export async function POST(request: NextRequest) {
     // 清除配置缓存，强制下次重新从数据库读取
     clearConfigCache();
 
+    // Upstash 环境下，等待一小段时间确保数据库操作完成
+    if (storageType === 'upstash') {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
     return NextResponse.json(
       { success: true },
       {
         headers: {
-          'Cache-Control': 'no-store', // 不缓存结果
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          Pragma: 'no-cache',
+          Expires: '0',
         },
       }
     );

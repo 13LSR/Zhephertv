@@ -111,6 +111,9 @@ const AIRecommendConfig = ({
       }
 
       showMessage('success', 'AI推荐配置保存成功');
+
+      // 稍微延迟后再刷新配置，确保数据库操作完成
+      await new Promise((resolve) => setTimeout(resolve, 200));
       await refreshConfig();
     } catch (err) {
       showMessage('error', err instanceof Error ? err.message : '保存失败');
