@@ -471,8 +471,16 @@ export async function hasSpecialFeaturePermission(
 
     // 如果用户不在配置中，检查是否是新注册用户
     if (!userConfig) {
-      // 新注册用户默认无特殊功能权限，但不阻止基本访问
-      // 这里返回false是正确的，因为新用户默认不应该有AI推荐权限
+      // 新注册用户：对于AI推荐功能，如果功能已启用，则允许访问
+      if (feature === 'ai-recommend') {
+        return config.AIRecommendConfig?.enabled || false;
+      }
+      // 其他特殊功能默认无权限
+      return false;
+    }
+
+    // 检查用户是否被封禁
+    if (userConfig.banned) {
       return false;
     }
 
@@ -481,7 +489,12 @@ export async function hasSpecialFeaturePermission(
       return true;
     }
 
-    // 普通用户需要检查特殊功能权限
+    // AI推荐功能特殊处理：如果功能已启用，所有已登录的非封禁用户都可以使用
+    if (feature === 'ai-recommend') {
+      return config.AIRecommendConfig?.enabled || false;
+    }
+
+    // 其他特殊功能需要检查权限配置
     // 优先检查用户直接配置的 enabledApis
     if (userConfig.enabledApis && userConfig.enabledApis.length > 0) {
       return userConfig.enabledApis.includes(feature);

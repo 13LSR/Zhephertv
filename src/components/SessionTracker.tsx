@@ -19,9 +19,9 @@ export function SessionTracker() {
         }
 
         // 检查用户是否已登录
-        const authCookie = document.cookie.split(';').find(cookie =>
-          cookie.trim().startsWith('auth=')
-        );
+        const authCookie = document.cookie
+          .split(';')
+          .find((cookie) => cookie.trim().startsWith('auth='));
 
         if (!authCookie) {
           // 用户未登录，不需要记录
@@ -33,8 +33,9 @@ export function SessionTracker() {
         const now = Date.now();
         const sessionTimeout = 4 * 60 * 60 * 1000; // 4小时
 
-        const shouldRecordLogin = !lastRecordedLogin ||
-          (now - parseInt(lastRecordedLogin)) > sessionTimeout;
+        const shouldRecordLogin =
+          !lastRecordedLogin ||
+          now - parseInt(lastRecordedLogin) > sessionTimeout;
 
         if (shouldRecordLogin) {
           console.log('检测到新会话，记录登入时间');
@@ -43,7 +44,7 @@ export function SessionTracker() {
           const response = await fetch('/api/user/my-stats', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ loginTime: now })
+            body: JSON.stringify({ loginTime: now }),
           });
 
           if (response.ok) {

@@ -2,20 +2,20 @@ import { ClientCache } from './client-cache';
 
 // 短剧数据缓存配置（秒）
 const SHORTDRAMA_CACHE_EXPIRE = {
-  details: 4 * 60 * 60,    // 详情4小时（变化较少）
-  lists: 2 * 60 * 60,     // 列表2小时（更新频繁）
+  details: 4 * 60 * 60, // 详情4小时（变化较少）
+  lists: 2 * 60 * 60, // 列表2小时（更新频繁）
   categories: 4 * 60 * 60, // 分类4小时（很少变化）
   recommends: 1 * 60 * 60, // 推荐1小时（经常更新）
-  episodes: 24 * 60 * 60,  // 集数24小时（基本不变）
-  parse: 30 * 60,          // 解析结果30分钟（URL会过期）
+  episodes: 24 * 60 * 60, // 集数24小时（基本不变）
+  parse: 30 * 60, // 解析结果30分钟（URL会过期）
 };
 
 // 缓存工具函数
 function getCacheKey(prefix: string, params: Record<string, any>): string {
   const sortedParams = Object.keys(params)
-    .filter(key => params[key] !== undefined && params[key] !== null)
+    .filter((key) => params[key] !== undefined && params[key] !== null)
     .sort()
-    .map(key => `${key}=${params[key]}`)
+    .map((key) => `${key}=${params[key]}`)
     .join('&');
   return `shortdrama-${prefix}-${sortedParams}`;
 }
@@ -51,7 +51,11 @@ async function getCache(key: string): Promise<any | null> {
 }
 
 // 统一缓存设置方法
-async function setCache(key: string, data: any, expireSeconds: number): Promise<void> {
+async function setCache(
+  key: string,
+  data: any,
+  expireSeconds: number
+): Promise<void> {
   try {
     // 主要存储：统一存储
     await ClientCache.set(key, data, expireSeconds);
@@ -62,7 +66,7 @@ async function setCache(key: string, data: any, expireSeconds: number): Promise<
         const cacheData = {
           data,
           expire: Date.now() + expireSeconds * 1000,
-          created: Date.now()
+          created: Date.now(),
         };
         localStorage.setItem(key, JSON.stringify(cacheData));
       } catch (e) {
@@ -99,7 +103,7 @@ async function cleanExpiredCache(): Promise<void> {
           }
         }
       }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
     }
   } catch (e) {
     console.warn('清理短剧过期缓存失败:', e);

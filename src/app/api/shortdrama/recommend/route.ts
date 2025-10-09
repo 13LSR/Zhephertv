@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-
 // 强制动态路由，禁用所有缓存
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
 // 服务端专用函数，直接调用外部API
-async function getRecommendedShortDramasInternal(
-  category?: number,
-  size = 10
-) {
+async function getRecommendedShortDramasInternal(category?: number, size = 10) {
   const params = new URLSearchParams();
   if (category) params.append('category', category.toString());
   params.append('size', size.toString());
@@ -19,8 +15,9 @@ async function getRecommendedShortDramasInternal(
     `https://api.r2afosne.dpdns.org/vod/recommend?${params.toString()}`,
     {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        Accept: 'application/json',
       },
     }
   );
@@ -52,13 +49,13 @@ export async function GET(request: NextRequest) {
     const pageSize = size ? parseInt(size) : 10;
 
     if ((category && isNaN(categoryNum!)) || isNaN(pageSize)) {
-      return NextResponse.json(
-        { error: '参数格式错误' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
 
-    const result = await getRecommendedShortDramasInternal(categoryNum, pageSize);
+    const result = await getRecommendedShortDramasInternal(
+      categoryNum,
+      pageSize
+    );
 
     // 测试1小时HTTP缓存策略
     const response = NextResponse.json(result);
@@ -67,13 +64,22 @@ export async function GET(request: NextRequest) {
 
     // 1小时 = 3600秒
     const cacheTime = 3600;
-    response.headers.set('Cache-Control', `public, max-age=${cacheTime}, s-maxage=${cacheTime}`);
+    response.headers.set(
+      'Cache-Control',
+      `public, max-age=${cacheTime}, s-maxage=${cacheTime}`
+    );
     response.headers.set('CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
-    response.headers.set('Vercel-CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
+    response.headers.set(
+      'Vercel-CDN-Cache-Control',
+      `public, s-maxage=${cacheTime}`
+    );
 
     // 调试信息
     response.headers.set('X-Cache-Duration', '1hour');
-    response.headers.set('X-Cache-Expires-At', new Date(Date.now() + cacheTime * 1000).toISOString());
+    response.headers.set(
+      'X-Cache-Expires-At',
+      new Date(Date.now() + cacheTime * 1000).toISOString()
+    );
     response.headers.set('X-Debug-Timestamp', new Date().toISOString());
 
     // Vary头确保不同设备有不同缓存
@@ -82,9 +88,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('获取推荐短剧失败:', error);
-    return NextResponse.json(
-      { error: '服务器内部错误' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '服务器内部错误' }, { status: 500 });
   }
 }

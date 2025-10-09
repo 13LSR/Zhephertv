@@ -2,22 +2,22 @@ import { ClientCache } from './client-cache';
 
 // TMDB数据缓存配置（秒）
 const TMDB_CACHE_EXPIRE = {
-  actor_search: 6 * 60 * 60,    // 演员搜索6小时（较稳定）
+  actor_search: 6 * 60 * 60, // 演员搜索6小时（较稳定）
   person_details: 24 * 60 * 60, // 人物详情24小时（基本不变）
-  movie_credits: 12 * 60 * 60,  // 演员电影作品12小时（较稳定）
-  tv_credits: 12 * 60 * 60,     // 演员电视剧作品12小时（较稳定）
-  movie_details: 24 * 60 * 60,  // 电影详情24小时（基本不变）
-  tv_details: 24 * 60 * 60,     // 电视剧详情24小时（基本不变）
-  trending: 2 * 60 * 60,        // 热门内容2小时（更新频繁）
-  discover: 4 * 60 * 60,        // 发现内容4小时
+  movie_credits: 12 * 60 * 60, // 演员电影作品12小时（较稳定）
+  tv_credits: 12 * 60 * 60, // 演员电视剧作品12小时（较稳定）
+  movie_details: 24 * 60 * 60, // 电影详情24小时（基本不变）
+  tv_details: 24 * 60 * 60, // 电视剧详情24小时（基本不变）
+  trending: 2 * 60 * 60, // 热门内容2小时（更新频繁）
+  discover: 4 * 60 * 60, // 发现内容4小时
 };
 
 // 缓存工具函数
 function getCacheKey(prefix: string, params: Record<string, any>): string {
   const sortedParams = Object.keys(params)
-    .filter(key => params[key] !== undefined && params[key] !== null)
+    .filter((key) => params[key] !== undefined && params[key] !== null)
     .sort()
-    .map(key => `${key}=${params[key]}`)
+    .map((key) => `${key}=${params[key]}`)
     .join('&');
   return `tmdb-${prefix}-${sortedParams}`;
 }
@@ -53,7 +53,11 @@ async function getCache(key: string): Promise<any | null> {
 }
 
 // 统一缓存设置方法
-async function setCache(key: string, data: any, expireSeconds: number): Promise<void> {
+async function setCache(
+  key: string,
+  data: any,
+  expireSeconds: number
+): Promise<void> {
   try {
     console.log(`🔄 TMDB缓存设置: ${key}`);
 
@@ -67,7 +71,7 @@ async function setCache(key: string, data: any, expireSeconds: number): Promise<
         const cacheData = {
           data,
           expire: Date.now() + expireSeconds * 1000,
-          created: Date.now()
+          created: Date.now(),
         };
         localStorage.setItem(key, JSON.stringify(cacheData));
         console.log(`✅ TMDB缓存已存储到localStorage: ${key}`);
@@ -106,10 +110,12 @@ async function cleanExpiredCache(): Promise<void> {
           }
         }
       }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
 
       if (keysToRemove.length > 0) {
-        console.log(`LocalStorage 清理了 ${keysToRemove.length} 个过期的TMDB缓存项`);
+        console.log(
+          `LocalStorage 清理了 ${keysToRemove.length} 个过期的TMDB缓存项`
+        );
       }
     }
   } catch (e) {
@@ -127,13 +133,13 @@ export function getTMDBCacheStats(): {
     return { totalItems: 0, totalSize: 0, byType: {} };
   }
 
-  const keys = Object.keys(localStorage).filter(key =>
+  const keys = Object.keys(localStorage).filter((key) =>
     key.startsWith('tmdb-')
   );
   const byType: Record<string, number> = {};
   let totalSize = 0;
 
-  keys.forEach(key => {
+  keys.forEach((key) => {
     const type = key.split('-')[1]; // tmdb-{type}-{params}
     byType[type] = (byType[type] || 0) + 1;
 
@@ -146,7 +152,7 @@ export function getTMDBCacheStats(): {
   return {
     totalItems: keys.length,
     totalSize,
-    byType
+    byType,
   };
 }
 
@@ -154,10 +160,10 @@ export function getTMDBCacheStats(): {
 export function clearTMDBCache(): void {
   if (typeof localStorage === 'undefined') return;
 
-  const keys = Object.keys(localStorage).filter(key =>
+  const keys = Object.keys(localStorage).filter((key) =>
     key.startsWith('tmdb-')
   );
-  keys.forEach(key => localStorage.removeItem(key));
+  keys.forEach((key) => localStorage.removeItem(key));
   console.log(`清理了 ${keys.length} 个TMDB缓存项`);
 }
 

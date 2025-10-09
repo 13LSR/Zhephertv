@@ -7,9 +7,10 @@
 ## 变更记录 (Changelog)
 
 ### 2025-09-28 17:17:51
+
 - 🚀 **模块文档初始化**：完成构建脚本模块分析
-- 📊 **脚本功能梳理**：识别出2个核心构建脚本
-- 🔧 **构建流程分析**：PWA清单生成和变更日志转换流程
+- 📊 **脚本功能梳理**：识别出 2 个核心构建脚本
+- 🔧 **构建流程分析**：PWA 清单生成和变更日志转换流程
 
 ---
 
@@ -17,14 +18,15 @@
 
 构建脚本模块负责项目的构建和发布相关任务：
 
-- **PWA支持**：动态生成Web App Manifest文件
+- **PWA 支持**：动态生成 Web App Manifest 文件
 - **变更日志**：处理和转换项目变更记录
-- **构建集成**：与Next.js构建流程集成
+- **构建集成**：与 Next.js 构建流程集成
 - **自动化工具**：简化重复性构建任务
 
 ## 入口与启动
 
 ### 脚本执行时机
+
 ```json
 {
   "scripts": {
@@ -36,28 +38,31 @@
 ```
 
 ### 构建流程
-1. **开发模式**：每次启动开发服务器前生成manifest
-2. **生产构建**：构建前生成最新的manifest文件
-3. **PWA优化**：确保PWA配置始终是最新的
+
+1. **开发模式**：每次启动开发服务器前生成 manifest
+2. **生产构建**：构建前生成最新的 manifest 文件
+3. **PWA 优化**：确保 PWA 配置始终是最新的
 
 ## 对外接口
 
 ### 脚本列表
 
-| 脚本文件 | 功能描述 | 执行时机 | 输出文件 |
-|----------|----------|----------|----------|
-| **generate-manifest.js** | PWA清单生成 | 构建前/开发启动前 | `public/manifest.json` |
-| **convert-changelog.js** | 变更日志转换 | 手动执行 | 格式化的变更日志 |
+| 脚本文件                 | 功能描述     | 执行时机          | 输出文件               |
+| ------------------------ | ------------ | ----------------- | ---------------------- |
+| **generate-manifest.js** | PWA 清单生成 | 构建前/开发启动前 | `public/manifest.json` |
+| **convert-changelog.js** | 变更日志转换 | 手动执行          | 格式化的变更日志       |
 
 ### generate-manifest.js
 
 **功能特性：**
-- 动态读取项目配置生成PWA manifest
+
+- 动态读取项目配置生成 PWA manifest
 - 支持多种图标尺寸和格式
 - 自动获取项目名称和版本信息
 - 响应式图标适配不同设备
 
-**生成的Manifest结构：**
+**生成的 Manifest 结构：**
+
 ```json
 {
   "name": "项目名称",
@@ -79,6 +84,7 @@
 ```
 
 **执行方式：**
+
 ```bash
 # 单独执行
 node scripts/generate-manifest.js
@@ -90,12 +96,14 @@ pnpm gen:manifest
 ### convert-changelog.js
 
 **功能特性：**
+
 - 解析和转换变更日志格式
 - 支持多种输入格式
 - 生成标准化的变更记录
 - 版本历史整理
 
 **执行方式：**
+
 ```bash
 # 手动执行变更日志转换
 node scripts/convert-changelog.js
@@ -103,7 +111,8 @@ node scripts/convert-changelog.js
 
 ## 关键依赖与配置
 
-### Node.js依赖
+### Node.js 依赖
+
 ```json
 {
   "engines": {
@@ -113,19 +122,23 @@ node scripts/convert-changelog.js
 ```
 
 ### 文件系统操作
+
 - 读取 `package.json` 获取项目信息
 - 读取 `VERSION.txt` 获取版本号
-- 写入 `public/manifest.json` 生成PWA配置
+- 写入 `public/manifest.json` 生成 PWA 配置
 - 处理 `CHANGELOG` 文件格式转换
 
 ### 环境变量支持
+
 脚本支持以下环境变量：
+
 - `NEXT_PUBLIC_SITE_NAME` - 站点名称
 - `NODE_ENV` - 环境标识（development/production）
 
 ## 数据模型
 
-### PWA Manifest接口
+### PWA Manifest 接口
+
 ```typescript
 interface WebAppManifest {
   name: string;
@@ -152,6 +165,7 @@ interface WebAppManifest {
 ```
 
 ### 变更日志结构
+
 ```typescript
 interface ChangelogEntry {
   version: string;
@@ -164,6 +178,7 @@ interface ChangelogEntry {
 ```
 
 ### 项目信息接口
+
 ```typescript
 interface ProjectInfo {
   name: string;
@@ -177,59 +192,71 @@ interface ProjectInfo {
 ## 测试与质量
 
 ### 脚本测试
-- ✅ **语法检查**：JavaScript语法正确性
+
+- ✅ **语法检查**：JavaScript 语法正确性
 - ✅ **文件输出**：确保生成正确的输出文件
 - ⚠️ **待完善**：自动化测试覆盖
 - ⚠️ **待完善**：错误处理测试
 
 ### 质量保证
+
 - **错误处理**：文件读写错误捕获
 - **输入验证**：配置参数验证
 - **输出验证**：生成文件格式验证
 - **兼容性**：跨平台文件路径处理
 
 ### 性能考虑
+
 - **快速执行**：脚本执行时间优化
 - **缓存策略**：避免重复生成相同文件
 - **依赖最小化**：减少外部依赖
 
 ## 常见问题 (FAQ)
 
-### Q: PWA manifest为什么要动态生成？
-A: 为了确保manifest文件始终反映最新的项目配置、版本信息和图标资源。
+### Q: PWA manifest 为什么要动态生成？
 
-### Q: 如何自定义PWA配置？
+A: 为了确保 manifest 文件始终反映最新的项目配置、版本信息和图标资源。
+
+### Q: 如何自定义 PWA 配置？
+
 A: 修改 `generate-manifest.js` 脚本中的配置对象，或通过环境变量传递参数。
 
 ### Q: 脚本执行失败怎么办？
-A: 检查Node.js版本、文件权限、项目目录结构，查看控制台错误信息。
+
+A: 检查 Node.js 版本、文件权限、项目目录结构，查看控制台错误信息。
 
 ### Q: 如何添加新的构建脚本？
-A: 在 `scripts` 目录下创建新的JavaScript文件，在 `package.json` 中添加对应的npm script。
+
+A: 在 `scripts` 目录下创建新的 JavaScript 文件，在 `package.json` 中添加对应的 npm script。
 
 ### Q: 变更日志脚本的作用是什么？
+
 A: 将原始变更记录转换为标准格式，便于展示和发布管理。
 
 ## 相关文件清单
 
-### 构建脚本 (2个)
-- `generate-manifest.js` - PWA清单生成器
-  - 功能：动态生成Web App Manifest
+### 构建脚本 (2 个)
+
+- `generate-manifest.js` - PWA 清单生成器
+
+  - 功能：动态生成 Web App Manifest
   - 输入：项目配置、版本信息、图标文件
   - 输出：`public/manifest.json`
-  - 依赖：Node.js fs模块、path模块
+  - 依赖：Node.js fs 模块、path 模块
 
 - `convert-changelog.js` - 变更日志转换器
   - 功能：转换和格式化变更日志
   - 输入：`CHANGELOG` 文件
   - 输出：格式化的变更记录
-  - 依赖：Node.js fs模块
+  - 依赖：Node.js fs 模块
 
 ### 相关配置文件
+
 - `../../package.json` - 项目基本信息源
 - `../../VERSION.txt` - 版本信息文件
 - `../../CHANGELOG` - 原始变更日志
-- `../../public/icons/` - PWA图标资源目录
+- `../../public/icons/` - PWA 图标资源目录
 
 ### 输出文件
-- `../../public/manifest.json` - 生成的PWA清单文件
+
+- `../../public/manifest.json` - 生成的 PWA 清单文件

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getFilters,getReleaseCalendar } from '@/lib/release-calendar-scraper';
+import { getFilters, getReleaseCalendar } from '@/lib/release-calendar-scraper';
 import { ReleaseCalendarResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -12,7 +12,6 @@ export const dynamic = 'force-dynamic';
 let cacheData: ReleaseCalendarResult | null = null;
 let cacheTime = 0;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24小时缓存（影视发布数据更新不频繁）
-
 
 export async function GET(request: NextRequest) {
   // 检查用户认证
@@ -30,9 +29,12 @@ export async function GET(request: NextRequest) {
     const genre = searchParams.get('genre');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
+    const limit = searchParams.get('limit')
+      ? parseInt(searchParams.get('limit')!)
+      : undefined;
     const offset = parseInt(searchParams.get('offset') || '0');
-    const refresh = searchParams.get('refresh') === 'true' || searchParams.has('nocache');
+    const refresh =
+      searchParams.get('refresh') === 'true' || searchParams.has('nocache');
 
     // 参数验证
     if (type && !['movie', 'tv'].includes(type)) {
@@ -44,58 +46,57 @@ export async function GET(request: NextRequest) {
 
     // 移除limit限制，因为实际数据量只有65个项目
     if (offset < 0) {
-      return NextResponse.json(
-        { error: 'offset 不能为负数' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'offset 不能为负数' }, { status: 400 });
     }
 
     // 检查缓存（除非强制刷新）
     const now = Date.now();
-    if (!refresh && cacheData && (now - cacheTime) < CACHE_DURATION) {
+    if (!refresh && cacheData && now - cacheTime < CACHE_DURATION) {
       console.log('使用缓存的发布日历数据');
 
       // 从缓存中应用过滤和分页
       let filteredItems = cacheData.items;
 
       if (type) {
-        filteredItems = filteredItems.filter(item => item.type === type);
+        filteredItems = filteredItems.filter((item) => item.type === type);
       }
 
       if (region && region !== '全部') {
-        filteredItems = filteredItems.filter(item =>
+        filteredItems = filteredItems.filter((item) =>
           item.region.includes(region)
         );
       }
 
       if (genre && genre !== '全部') {
-        filteredItems = filteredItems.filter(item =>
+        filteredItems = filteredItems.filter((item) =>
           item.genre.includes(genre)
         );
       }
 
       if (dateFrom) {
-        filteredItems = filteredItems.filter(item =>
-          item.releaseDate >= dateFrom
+        filteredItems = filteredItems.filter(
+          (item) => item.releaseDate >= dateFrom
         );
       }
 
       if (dateTo) {
-        filteredItems = filteredItems.filter(item =>
-          item.releaseDate <= dateTo
+        filteredItems = filteredItems.filter(
+          (item) => item.releaseDate <= dateTo
         );
       }
 
       const total = filteredItems.length;
-      const items = limit ? filteredItems.slice(offset, offset + limit) : filteredItems.slice(offset);
+      const items = limit
+        ? filteredItems.slice(offset, offset + limit)
+        : filteredItems.slice(offset);
       const hasMore = limit ? offset + limit < total : false;
 
       return NextResponse.json({
-      items,
-      total,
-      hasMore,
-      filters: cacheData.filters,
-    });
+        items,
+        total,
+        hasMore,
+        filters: cacheData.filters,
+      });
     }
 
     console.log('获取新的发布日历数据...');

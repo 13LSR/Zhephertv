@@ -2,7 +2,13 @@
 
 'use client';
 
-import { AlertCircle, CheckCircle, Copy, ExternalLink,Shield } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle,
+  Copy,
+  ExternalLink,
+  Shield,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { AdminConfig } from '@/lib/admin.types';
@@ -12,17 +18,23 @@ interface TVBoxSecurityConfigProps {
   refreshConfig: () => Promise<void>;
 }
 
-const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps) => {
+const TVBoxSecurityConfig = ({
+  config,
+  refreshConfig,
+}: TVBoxSecurityConfigProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+
   const [securitySettings, setSecuritySettings] = useState({
     enableAuth: false,
     token: '',
     enableIpWhitelist: false,
     allowedIPs: [] as string[],
     enableRateLimit: false,
-    rateLimit: 60
+    rateLimit: 60,
   });
 
   const [newIP, setNewIP] = useState('');
@@ -34,23 +46,25 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
       setSecuritySettings({
         enableAuth: config.TVBoxSecurityConfig.enableAuth ?? false,
         token: config.TVBoxSecurityConfig.token || generateToken(),
-        enableIpWhitelist: config.TVBoxSecurityConfig.enableIpWhitelist ?? false,
+        enableIpWhitelist:
+          config.TVBoxSecurityConfig.enableIpWhitelist ?? false,
         allowedIPs: config.TVBoxSecurityConfig.allowedIPs || [],
         enableRateLimit: config.TVBoxSecurityConfig.enableRateLimit ?? false,
-        rateLimit: config.TVBoxSecurityConfig.rateLimit ?? 60
+        rateLimit: config.TVBoxSecurityConfig.rateLimit ?? 60,
       });
     } else {
       // 默认配置
-      setSecuritySettings(prev => ({
+      setSecuritySettings((prev) => ({
         ...prev,
-        token: prev.token || generateToken()
+        token: prev.token || generateToken(),
       }));
     }
   }, [config]);
 
   // 生成随机Token
   function generateToken() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     for (let i = 0; i < 32; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -67,7 +81,7 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
   // 保存配置
   const handleSave = async () => {
     setIsLoading(true);
-    
+
     try {
       // 验证IP地址格式
       for (const ip of securitySettings.allowedIPs) {
@@ -109,10 +123,10 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
     // 简单的IP地址验证
     const ipRegex = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/;
     const parts = ip.split('/')[0].split('.');
-    
+
     if (!ipRegex.test(ip)) return false;
-    
-    return parts.every(part => {
+
+    return parts.every((part) => {
       const num = parseInt(part, 10);
       return num >= 0 && num <= 255;
     });
@@ -121,29 +135,32 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
   // 添加IP地址
   const addIP = () => {
     if (!newIP.trim()) return;
-    
+
     if (!isValidIPOrCIDR(newIP.trim())) {
-      showMessage('error', '请输入有效的IP地址或CIDR格式 (例如: 192.168.1.100 或 192.168.1.0/24)');
+      showMessage(
+        'error',
+        '请输入有效的IP地址或CIDR格式 (例如: 192.168.1.100 或 192.168.1.0/24)'
+      );
       return;
     }
-    
+
     if (securitySettings.allowedIPs.includes(newIP.trim())) {
       showMessage('error', 'IP地址已存在');
       return;
     }
 
-    setSecuritySettings(prev => ({
+    setSecuritySettings((prev) => ({
       ...prev,
-      allowedIPs: [...prev.allowedIPs, newIP.trim()]
+      allowedIPs: [...prev.allowedIPs, newIP.trim()],
     }));
     setNewIP('');
   };
 
   // 删除IP地址
   const removeIP = (index: number) => {
-    setSecuritySettings(prev => ({
+    setSecuritySettings((prev) => ({
       ...prev,
-      allowedIPs: prev.allowedIPs.filter((_, i) => i !== index)
+      allowedIPs: prev.allowedIPs.filter((_, i) => i !== index),
     }));
   };
 
@@ -157,11 +174,11 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
   const generateExampleURL = () => {
     const baseUrl = window.location.origin;
     let url = `${baseUrl}/api/tvbox`;
-    
+
     if (securitySettings.enableAuth) {
       url += `?token=${securitySettings.token}`;
     }
-    
+
     return url;
   };
 
@@ -175,11 +192,13 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
       </div>
 
       {message && (
-        <div className={`mb-4 p-4 rounded-lg flex items-center gap-2 ${
-          message.type === 'success' 
-            ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-            : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-        }`}>
+        <div
+          className={`mb-4 p-4 rounded-lg flex items-center gap-2 ${
+            message.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+              : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+          }`}
+        >
           {message.type === 'success' ? (
             <CheckCircle className='h-5 w-5' />
           ) : (
@@ -205,7 +224,12 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
               <input
                 type='checkbox'
                 checked={securitySettings.enableAuth}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, enableAuth: e.target.checked }))}
+                onChange={(e) =>
+                  setSecuritySettings((prev) => ({
+                    ...prev,
+                    enableAuth: e.target.checked,
+                  }))
+                }
                 className='sr-only peer'
               />
               <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
@@ -224,22 +248,27 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                     <input
                       type={showToken ? 'text' : 'password'}
                       value={securitySettings.token}
-                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, token: e.target.value }))}
+                      onChange={(e) =>
+                        setSecuritySettings((prev) => ({
+                          ...prev,
+                          token: e.target.value,
+                        }))
+                      }
                       className='flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm break-all'
                     />
                     <button
-                      type="button"
+                      type='button'
                       onClick={() => setShowToken(!showToken)}
                       className='px-3 py-2 text-sm bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-lg whitespace-nowrap'
                     >
                       {showToken ? '隐藏' : '显示'}
                     </button>
                   </div>
-                  
+
                   {/* 操作按钮 - 响应式布局 */}
                   <div className='flex flex-col sm:flex-row gap-2'>
                     <button
-                      type="button"
+                      type='button'
                       onClick={copyToken}
                       className='flex-1 sm:flex-none px-4 py-2 text-sm bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
                     >
@@ -247,12 +276,27 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                       复制Token
                     </button>
                     <button
-                      type="button"
-                      onClick={() => setSecuritySettings(prev => ({ ...prev, token: generateToken() }))}
+                      type='button'
+                      onClick={() =>
+                        setSecuritySettings((prev) => ({
+                          ...prev,
+                          token: generateToken(),
+                        }))
+                      }
                       className='flex-1 sm:flex-none px-4 py-2 text-sm bg-green-100 dark:bg-green-900 hover:bg-green-200 dark:hover:bg-green-800 text-green-700 dark:text-green-300 rounded-lg flex items-center justify-center gap-2 transition-colors'
                     >
-                      <svg className='h-4 w-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' />
+                      <svg
+                        className='h-4 w-4'
+                        fill='none'
+                        stroke='currentColor'
+                        viewBox='0 0 24 24'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth='2'
+                          d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                        />
                       </svg>
                       重新生成
                     </button>
@@ -278,7 +322,12 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
               <input
                 type='checkbox'
                 checked={securitySettings.enableIpWhitelist}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, enableIpWhitelist: e.target.checked }))}
+                onChange={(e) =>
+                  setSecuritySettings((prev) => ({
+                    ...prev,
+                    enableIpWhitelist: e.target.checked,
+                  }))
+                }
                 className='sr-only peer'
               />
               <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
@@ -297,19 +346,24 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                   onKeyDown={(e) => e.key === 'Enter' && addIP()}
                 />
                 <button
-                  type="button"
+                  type='button'
                   onClick={addIP}
                   className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg'
                 >
                   添加
                 </button>
               </div>
-              
+
               {securitySettings.allowedIPs.length > 0 && (
                 <div className='space-y-2'>
                   {securitySettings.allowedIPs.map((ip, index) => (
-                    <div key={index} className='flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded'>
-                      <span className='text-gray-900 dark:text-gray-100'>{ip}</span>
+                    <div
+                      key={index}
+                      className='flex items-center justify-between bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded'
+                    >
+                      <span className='text-gray-900 dark:text-gray-100'>
+                        {ip}
+                      </span>
                       <button
                         onClick={() => removeIP(index)}
                         className='text-red-600 hover:text-red-800 text-sm'
@@ -320,7 +374,7 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                   ))}
                 </div>
               )}
-              
+
               <p className='text-xs text-gray-500 dark:text-gray-400'>
                 支持单个IP (192.168.1.100) 和CIDR格式 (192.168.1.0/24)
               </p>
@@ -343,7 +397,12 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
               <input
                 type='checkbox'
                 checked={securitySettings.enableRateLimit}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, enableRateLimit: e.target.checked }))}
+                onChange={(e) =>
+                  setSecuritySettings((prev) => ({
+                    ...prev,
+                    enableRateLimit: e.target.checked,
+                  }))
+                }
                 className='sr-only peer'
               />
               <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
@@ -360,7 +419,12 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                 min='1'
                 max='1000'
                 value={securitySettings.rateLimit}
-                onChange={(e) => setSecuritySettings(prev => ({ ...prev, rateLimit: parseInt(e.target.value) || 60 }))}
+                onChange={(e) =>
+                  setSecuritySettings((prev) => ({
+                    ...prev,
+                    rateLimit: parseInt(e.target.value) || 60,
+                  }))
+                }
                 className='w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
               />
               <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
@@ -382,7 +446,7 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
                 {generateExampleURL()}
               </code>
             </div>
-            
+
             {/* 操作按钮 */}
             <div className='flex flex-col sm:flex-row gap-2'>
               <button
@@ -406,9 +470,10 @@ const TVBoxSecurityConfig = ({ config, refreshConfig }: TVBoxSecurityConfigProps
               </a>
             </div>
           </div>
-          
+
           <p className='text-xs text-blue-700 dark:text-blue-400 mt-3'>
-            💡 在TVBox中导入此URL即可使用。Base64格式请在URL后添加 &format=base64
+            💡 在TVBox中导入此URL即可使用。Base64格式请在URL后添加
+            &format=base64
           </p>
         </div>
       </div>

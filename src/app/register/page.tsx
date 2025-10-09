@@ -33,18 +33,17 @@ function VersionDisplay() {
   }, []);
 
   return (
-    <div
-      className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'
-    >
+    <div className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
       <span className='font-mono'>v{CURRENT_VERSION}</span>
       {!isChecking && updateStatus !== UpdateStatus.FETCH_FAILED && (
         <div
-          className={`flex items-center gap-1.5 ${updateStatus === UpdateStatus.HAS_UPDATE
-            ? 'text-yellow-600 dark:text-yellow-400'
-            : updateStatus === UpdateStatus.NO_UPDATE
+          className={`flex items-center gap-1.5 ${
+            updateStatus === UpdateStatus.HAS_UPDATE
+              ? 'text-yellow-600 dark:text-yellow-400'
+              : updateStatus === UpdateStatus.NO_UPDATE
               ? 'text-green-600 dark:text-green-400'
               : ''
-            }`}
+          }`}
         >
           {updateStatus === UpdateStatus.HAS_UPDATE && (
             <>
@@ -87,17 +86,21 @@ function RegisterPageClient() {
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: '', password: '', confirmPassword: '' }),
+          body: JSON.stringify({
+            username: '',
+            password: '',
+            confirmPassword: '',
+          }),
         });
-        
+
         const data = await res.json();
-        
+
         // 如果是localStorage模式，跳转登录
         if (data.error === 'localStorage 模式不支持用户注册') {
           router.replace('/login');
           return;
         }
-        
+
         // 如果是管理员关闭了注册
         if (data.error === '管理员已关闭用户注册功能') {
           setRegistrationDisabled(true);
@@ -105,7 +108,7 @@ function RegisterPageClient() {
           setShouldShowRegister(true);
           return;
         }
-        
+
         // 其他情况显示注册表单（包括用户名已存在等正常的验证错误）
         setShouldShowRegister(true);
       } catch (error) {
@@ -218,7 +221,7 @@ function RegisterPageClient() {
         <p className='text-center text-gray-600 dark:text-gray-400 text-sm mb-8'>
           注册新账户
         </p>
-        
+
         <form onSubmit={handleSubmit} className='space-y-6'>
           <div>
             <label htmlFor='username' className='sr-only'>
@@ -270,7 +273,9 @@ function RegisterPageClient() {
           )}
 
           {success && (
-            <p className='text-sm text-green-600 dark:text-green-400'>{success}</p>
+            <p className='text-sm text-green-600 dark:text-green-400'>
+              {success}
+            </p>
           )}
 
           <button

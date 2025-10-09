@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-
 // 强制动态路由，禁用所有缓存
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -16,8 +15,9 @@ async function getShortDramaListInternal(
     `https://api.r2afosne.dpdns.org/vod/list?categoryId=${category}&page=${page}&size=${size}`,
     {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/json',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        Accept: 'application/json',
       },
     }
   );
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       size,
       userAgent: request.headers.get('user-agent'),
       referer: request.headers.get('referer'),
-      url: request.url
+      url: request.url,
     });
 
     if (!categoryId) {
@@ -74,10 +74,7 @@ export async function GET(request: NextRequest) {
     const pageSize = size ? parseInt(size) : 20;
 
     if (isNaN(category) || isNaN(pageNum) || isNaN(pageSize)) {
-      return NextResponse.json(
-        { error: '参数格式错误' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
 
     const result = await getShortDramaListInternal(category, pageNum, pageSize);
@@ -86,12 +83,14 @@ export async function GET(request: NextRequest) {
     console.log('✅ [SHORTDRAMA API] 返回数据:', {
       timestamp: new Date().toISOString(),
       count: result.list?.length || 0,
-      firstItem: result.list?.[0] ? {
-        id: result.list[0].id,
-        name: result.list[0].name,
-        update_time: result.list[0].update_time
-      } : null,
-      hasMore: result.hasMore
+      firstItem: result.list?.[0]
+        ? {
+            id: result.list[0].id,
+            name: result.list[0].name,
+            update_time: result.list[0].update_time,
+          }
+        : null,
+      hasMore: result.hasMore,
     });
 
     // 设置与网页端一致的缓存策略（lists: 2小时）
@@ -101,13 +100,22 @@ export async function GET(request: NextRequest) {
 
     // 2小时 = 7200秒（与网页端SHORTDRAMA_CACHE_EXPIRE.lists一致）
     const cacheTime = 7200;
-    response.headers.set('Cache-Control', `public, max-age=${cacheTime}, s-maxage=${cacheTime}`);
+    response.headers.set(
+      'Cache-Control',
+      `public, max-age=${cacheTime}, s-maxage=${cacheTime}`
+    );
     response.headers.set('CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
-    response.headers.set('Vercel-CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
+    response.headers.set(
+      'Vercel-CDN-Cache-Control',
+      `public, s-maxage=${cacheTime}`
+    );
 
     // 调试信息
     response.headers.set('X-Cache-Duration', '2hour');
-    response.headers.set('X-Cache-Expires-At', new Date(Date.now() + cacheTime * 1000).toISOString());
+    response.headers.set(
+      'X-Cache-Expires-At',
+      new Date(Date.now() + cacheTime * 1000).toISOString()
+    );
     response.headers.set('X-Debug-Timestamp', new Date().toISOString());
 
     // Vary头确保不同设备有不同缓存
@@ -116,9 +124,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('获取短剧列表失败:', error);
-    return NextResponse.json(
-      { error: '服务器内部错误' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '服务器内部错误' }, { status: 500 });
   }
 }

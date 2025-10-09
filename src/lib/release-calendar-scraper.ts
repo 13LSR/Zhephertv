@@ -27,7 +27,10 @@ function parseMovieHTML(html: string): ReleaseCalendarItem[] {
       const block = itemBlocks[i];
 
       // 提取标题 - 从dd-d1 div中
-      const titleMatch = /<div class="dd-d1"><a[^>]*title="[^"]*">([^<]+)<\/a><\/div>/.exec(block);
+      const titleMatch =
+        /<div class="dd-d1"><a[^>]*title="[^"]*">([^<]+)<\/a><\/div>/.exec(
+          block
+        );
 
       // 提取导演
       const directorMatch = /<div>导演：([^<]*)<\/div>/.exec(block);
@@ -39,7 +42,9 @@ function parseMovieHTML(html: string): ReleaseCalendarItem[] {
       const genreMatch = /<div>类型：(.*?)<\/div>/.exec(block);
 
       // 提取上映时间
-      const dateMatch = /<div>上映时间：(\d{4}\/\d{2}\/\d{2})<\/div>/.exec(block);
+      const dateMatch = /<div>上映时间：(\d{4}\/\d{2}\/\d{2})<\/div>/.exec(
+        block
+      );
 
       // 提取主演 - 需要处理多个链接
       const actorsMatch = /<div class="dd-d2">主演：(.*?)<\/div>/.exec(block);
@@ -59,11 +64,17 @@ function parseMovieHTML(html: string): ReleaseCalendarItem[] {
 
         // 清理类型字段，移除HTML标签并保留斜杠分隔
         let genre = genreMatch ? genreMatch[1].trim() : '未知';
-        genre = genre.replace(/<a[^>]*>([^<]*)<\/a>/g, '$1').replace(/\s+/g, ' ').trim();
+        genre = genre
+          .replace(/<a[^>]*>([^<]*)<\/a>/g, '$1')
+          .replace(/\s+/g, ' ')
+          .trim();
 
         // 清理主演字段，移除HTML标签并保留斜杠分隔
         let actors = actorsMatch ? actorsMatch[1].trim() : '未知';
-        actors = actors.replace(/<a[^>]*>([^<]*)<\/a>/g, '$1').replace(/\s+/g, ' ').trim();
+        actors = actors
+          .replace(/<a[^>]*>([^<]*)<\/a>/g, '$1')
+          .replace(/\s+/g, ' ')
+          .trim();
 
         if (title && !title.includes('暂无')) {
           const item: ReleaseCalendarItem = {
@@ -106,7 +117,10 @@ function parseTVHTML(html: string): ReleaseCalendarItem[] {
       const block = itemBlocks[i];
 
       // 提取标题 - 从dd-d1 div中
-      const titleMatch = /<div class="dd-d1"><a[^>]*title="[^"]*">([^<]+)<\/a><\/div>/.exec(block);
+      const titleMatch =
+        /<div class="dd-d1"><a[^>]*title="[^"]*">([^<]+)<\/a><\/div>/.exec(
+          block
+        );
 
       // 提取导演
       const directorMatch = /<div>导演：([^<]*)<\/div>/.exec(block);
@@ -118,7 +132,9 @@ function parseTVHTML(html: string): ReleaseCalendarItem[] {
       const genreMatch = /<div>类型：(.*?)<\/div>/.exec(block);
 
       // 提取上映时间
-      const dateMatch = /<div>上映时间：(\d{4}\/\d{2}\/\d{2})<\/div>/.exec(block);
+      const dateMatch = /<div>上映时间：(\d{4}\/\d{2}\/\d{2})<\/div>/.exec(
+        block
+      );
 
       // 提取主演 - 需要处理多个链接
       const actorsMatch = /<div class="dd-d2">主演：(.*?)<\/div>/.exec(block);
@@ -138,11 +154,17 @@ function parseTVHTML(html: string): ReleaseCalendarItem[] {
 
         // 清理类型字段，移除HTML标签并保留斜杠分隔
         let genre = genreMatch ? genreMatch[1].trim() : '未知';
-        genre = genre.replace(/<a[^>]*>([^<]*)<\/a>/g, '$1').replace(/\s+/g, ' ').trim();
+        genre = genre
+          .replace(/<a[^>]*>([^<]*)<\/a>/g, '$1')
+          .replace(/\s+/g, ' ')
+          .trim();
 
         // 清理主演字段，移除HTML标签并保留斜杠分隔
         let actors = actorsMatch ? actorsMatch[1].trim() : '未知';
-        actors = actors.replace(/<a[^>]*>([^<]*)<\/a>/g, '$1').replace(/\s+/g, ' ').trim();
+        actors = actors
+          .replace(/<a[^>]*>([^<]*)<\/a>/g, '$1')
+          .replace(/\s+/g, ' ')
+          .trim();
 
         if (title && !title.includes('暂无')) {
           const item: ReleaseCalendarItem = {
@@ -178,7 +200,8 @@ export async function scrapeMovieReleases(): Promise<ReleaseCalendarItem[]> {
     const url = `${baseUrl}/dianying/shijianbiao/`;
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
       signal: AbortSignal.timeout(15000), // 15秒超时
     });
@@ -203,7 +226,8 @@ export async function scrapeTVReleases(): Promise<ReleaseCalendarItem[]> {
     const url = `${baseUrl}/dianshiju/shijianbiao/`;
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
       signal: AbortSignal.timeout(15000), // 15秒超时
     });
@@ -233,7 +257,7 @@ export async function scrapeAllReleases(): Promise<ReleaseCalendarItem[]> {
     console.log(`电影数据抓取完成: ${movies.length} 部`);
 
     // 添加延迟避免请求过于频繁
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     console.log('抓取电视剧数据...');
     const tvShows = await scrapeTVReleases();
@@ -252,15 +276,17 @@ export async function scrapeAllReleases(): Promise<ReleaseCalendarItem[]> {
 /**
  * 获取发布日历数据（带缓存）
  */
-export async function getReleaseCalendar(options: {
-  type?: 'movie' | 'tv';
-  region?: string;
-  genre?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  limit?: number;
-  offset?: number;
-} = {}): Promise<{
+export async function getReleaseCalendar(
+  options: {
+    type?: 'movie' | 'tv';
+    region?: string;
+    genre?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    limit?: number;
+    offset?: number;
+  } = {}
+): Promise<{
   items: ReleaseCalendarItem[];
   total: number;
   hasMore: boolean;
@@ -273,30 +299,32 @@ export async function getReleaseCalendar(options: {
     let filteredItems = allItems;
 
     if (options.type) {
-      filteredItems = filteredItems.filter(item => item.type === options.type);
+      filteredItems = filteredItems.filter(
+        (item) => item.type === options.type
+      );
     }
 
     if (options.region && options.region !== '全部') {
-      filteredItems = filteredItems.filter(item =>
+      filteredItems = filteredItems.filter((item) =>
         item.region.includes(options.region!)
       );
     }
 
     if (options.genre && options.genre !== '全部') {
-      filteredItems = filteredItems.filter(item =>
+      filteredItems = filteredItems.filter((item) =>
         item.genre.includes(options.genre!)
       );
     }
 
     if (options.dateFrom) {
-      filteredItems = filteredItems.filter(item =>
-        item.releaseDate >= options.dateFrom!
+      filteredItems = filteredItems.filter(
+        (item) => item.releaseDate >= options.dateFrom!
       );
     }
 
     if (options.dateTo) {
-      filteredItems = filteredItems.filter(item =>
-        item.releaseDate <= options.dateTo!
+      filteredItems = filteredItems.filter(
+        (item) => item.releaseDate <= options.dateTo!
       );
     }
 
@@ -308,7 +336,9 @@ export async function getReleaseCalendar(options: {
     const offset = options.offset || 0;
 
     // 如果没有指定limit，返回所有数据
-    const items = limit ? filteredItems.slice(offset, offset + limit) : filteredItems.slice(offset);
+    const items = limit
+      ? filteredItems.slice(offset, offset + limit)
+      : filteredItems.slice(offset);
     const hasMore = limit ? offset + limit < total : false;
 
     return { items, total, hasMore };
@@ -331,18 +361,18 @@ export async function getFilters(): Promise<{
 
     // 统计类型
     const typeCount = { movie: 0, tv: 0 };
-    allItems.forEach(item => typeCount[item.type]++);
+    allItems.forEach((item) => typeCount[item.type]++);
 
     // 统计地区
     const regionCount: Record<string, number> = {};
-    allItems.forEach(item => {
+    allItems.forEach((item) => {
       const region = item.region || '未知';
       regionCount[region] = (regionCount[region] || 0) + 1;
     });
 
     // 统计类型/标签
     const genreCount: Record<string, number> = {};
-    allItems.forEach(item => {
+    allItems.forEach((item) => {
       const genre = item.genre || '未知';
       genreCount[genre] = (genreCount[genre] || 0) + 1;
     });

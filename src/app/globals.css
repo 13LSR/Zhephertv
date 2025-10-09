@@ -291,7 +291,7 @@ div[data-media-provider] video {
   }
 
   /* 防止进度条拖拽时弹窗干扰 */
-  .artplayer[data-dragging="true"] .artplayer-plugin-danmuku .apd-config-panel {
+  .artplayer[data-dragging='true'] .artplayer-plugin-danmuku .apd-config-panel {
     opacity: 0 !important;
     pointer-events: none !important;
     visibility: hidden !important;

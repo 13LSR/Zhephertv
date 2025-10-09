@@ -382,7 +382,7 @@ export class UpstashRedisStorage implements IStorage {
     try {
       const val = await withRetry(() => this.client.get(this.cacheKey(key)));
       if (!val) return null;
-      
+
       // 智能处理返回值：Upstash 可能返回字符串或已解析的对象
       if (typeof val === 'string') {
         try {
@@ -401,10 +401,14 @@ export class UpstashRedisStorage implements IStorage {
     }
   }
 
-  async setCache(key: string, data: any, expireSeconds?: number): Promise<void> {
+  async setCache(
+    key: string,
+    data: any,
+    expireSeconds?: number
+  ): Promise<void> {
     const cacheKey = this.cacheKey(key);
     const value = JSON.stringify(data);
-    
+
     if (expireSeconds) {
       await withRetry(() => this.client.setex(cacheKey, expireSeconds, value));
     } else {
@@ -424,7 +428,9 @@ export class UpstashRedisStorage implements IStorage {
 
     if (keys.length > 0) {
       await withRetry(() => this.client.del(...keys));
-      console.log(`Cleared ${keys.length} cache entries with pattern: ${pattern}`);
+      console.log(
+        `Cleared ${keys.length} cache entries with pattern: ${pattern}`
+      );
     }
   }
 
@@ -455,7 +461,8 @@ export class UpstashRedisStorage implements IStorage {
       let totalWatchTime = 0;
       let totalPlays = 0;
       const sourceCount: Record<string, number> = {};
-      const dailyData: Record<string, { watchTime: number; plays: number }> = {};
+      const dailyData: Record<string, { watchTime: number; plays: number }> =
+        {};
 
       // 用户注册统计
       const now = Date.now();
@@ -473,7 +480,8 @@ export class UpstashRedisStorage implements IStorage {
         const PROJECT_START_DATE = new Date('2025-09-14').getTime();
         // 模拟用户创建时间（Upstash模式下通常没有这个信息，使用首次播放时间或项目开始时间）
         const userCreatedAt = userStat.firstWatchDate || PROJECT_START_DATE;
-        const registrationDays = Math.floor((now - userCreatedAt) / (1000 * 60 * 60 * 24)) + 1;
+        const registrationDays =
+          Math.floor((now - userCreatedAt) / (1000 * 60 * 60 * 24)) + 1;
 
         // 统计今日新增用户
         if (userCreatedAt >= todayStart) {
@@ -535,7 +543,11 @@ export class UpstashRedisStorage implements IStorage {
         .map(([source, count]) => ({ source, count }));
 
       // 整理近7天数据
-      const dailyStats: Array<{ date: string; watchTime: number; plays: number }> = [];
+      const dailyStats: Array<{
+        date: string;
+        watchTime: number;
+        plays: number;
+      }> = [];
       for (let i = 6; i >= 0; i--) {
         const date = new Date(now - i * 24 * 60 * 60 * 1000);
         const dateKey = date.toISOString().split('T')[0];
@@ -563,16 +575,20 @@ export class UpstashRedisStorage implements IStorage {
       const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
 
       const activeUsers = {
-        daily: userStats.filter(user => user.lastLoginTime >= oneDayAgo).length,
-        weekly: userStats.filter(user => user.lastLoginTime >= sevenDaysAgo).length,
-        monthly: userStats.filter(user => user.lastLoginTime >= thirtyDaysAgo).length,
+        daily: userStats.filter((user) => user.lastLoginTime >= oneDayAgo)
+          .length,
+        weekly: userStats.filter((user) => user.lastLoginTime >= sevenDaysAgo)
+          .length,
+        monthly: userStats.filter((user) => user.lastLoginTime >= thirtyDaysAgo)
+          .length,
       };
 
       const result: PlayStatsResult = {
         totalUsers: allUsers.length,
         totalWatchTime,
         totalPlays,
-        avgWatchTimePerUser: allUsers.length > 0 ? totalWatchTime / allUsers.length : 0,
+        avgWatchTimePerUser:
+          allUsers.length > 0 ? totalWatchTime / allUsers.length : 0,
         avgPlaysPerUser: allUsers.length > 0 ? totalPlays / allUsers.length : 0,
         userStats,
         topSources,
@@ -629,7 +645,7 @@ export class UpstashRedisStorage implements IStorage {
           loginCount: 0,
           firstLoginTime: 0,
           lastLoginTime: 0,
-          lastLoginDate: 0
+          lastLoginDate: 0,
         };
 
         try {
@@ -643,7 +659,7 @@ export class UpstashRedisStorage implements IStorage {
           console.log(`[Upstash-NoRecords] 用户 ${userName} 登入统计查询:`, {
             key: loginStatsKey,
             rawValue: storedLoginStats,
-            hasValue: !!storedLoginStats
+            hasValue: !!storedLoginStats,
           });
 
           if (storedLoginStats) {
@@ -652,11 +668,16 @@ export class UpstashRedisStorage implements IStorage {
               loginCount: storedLoginStats.loginCount || 0,
               firstLoginTime: storedLoginStats.firstLoginTime || 0,
               lastLoginTime: storedLoginStats.lastLoginTime || 0,
-              lastLoginDate: storedLoginStats.lastLoginDate || storedLoginStats.lastLoginTime || 0
+              lastLoginDate:
+                storedLoginStats.lastLoginDate ||
+                storedLoginStats.lastLoginTime ||
+                0,
             };
             console.log(`[Upstash-NoRecords] 解析后的登入统计:`, loginStats);
           } else {
-            console.log(`[Upstash-NoRecords] 用户 ${userName} 没有登入统计数据`);
+            console.log(
+              `[Upstash-NoRecords] 用户 ${userName} 没有登入统计数据`
+            );
           }
         } catch (error) {
           console.error(`获取用户 ${userName} 登入统计失败:`, error);
@@ -678,7 +699,7 @@ export class UpstashRedisStorage implements IStorage {
           loginCount: loginStats.loginCount,
           firstLoginTime: loginStats.firstLoginTime,
           lastLoginTime: loginStats.lastLoginTime,
-          lastLoginDate: loginStats.lastLoginDate
+          lastLoginDate: loginStats.lastLoginDate,
         };
       }
 
@@ -697,10 +718,14 @@ export class UpstashRedisStorage implements IStorage {
       });
 
       // 计算观看影片总数（去重）
-      const totalMovies = new Set(playRecords.map(r => `${r.title}_${r.source_name}_${r.year}`)).size;
+      const totalMovies = new Set(
+        playRecords.map((r) => `${r.title}_${r.source_name}_${r.year}`)
+      ).size;
 
       // 计算首次观看时间
-      const firstWatchDate = Math.min(...playRecords.map(r => r.save_time || Date.now()));
+      const firstWatchDate = Math.min(
+        ...playRecords.map((r) => r.save_time || Date.now())
+      );
 
       // 获取最近播放记录
       const recentRecords = playRecords
@@ -722,7 +747,7 @@ export class UpstashRedisStorage implements IStorage {
         loginCount: 0,
         firstLoginTime: 0,
         lastLoginTime: 0,
-        lastLoginDate: 0
+        lastLoginDate: 0,
       };
 
       try {
@@ -736,7 +761,7 @@ export class UpstashRedisStorage implements IStorage {
         console.log(`[Upstash] 用户 ${userName} 登入统计查询:`, {
           key: loginStatsKey,
           rawValue: storedLoginStats,
-          hasValue: !!storedLoginStats
+          hasValue: !!storedLoginStats,
         });
 
         if (storedLoginStats) {
@@ -745,7 +770,10 @@ export class UpstashRedisStorage implements IStorage {
             loginCount: storedLoginStats.loginCount || 0,
             firstLoginTime: storedLoginStats.firstLoginTime || 0,
             lastLoginTime: storedLoginStats.lastLoginTime || 0,
-            lastLoginDate: storedLoginStats.lastLoginDate || storedLoginStats.lastLoginTime || 0
+            lastLoginDate:
+              storedLoginStats.lastLoginDate ||
+              storedLoginStats.lastLoginTime ||
+              0,
           };
           console.log(`[Upstash] 解析后的登入统计:`, loginStats);
         } else {
@@ -761,7 +789,8 @@ export class UpstashRedisStorage implements IStorage {
         totalPlays: playRecords.length,
         lastPlayTime,
         recentRecords,
-        avgWatchTime: playRecords.length > 0 ? totalWatchTime / playRecords.length : 0,
+        avgWatchTime:
+          playRecords.length > 0 ? totalWatchTime / playRecords.length : 0,
         mostWatchedSource,
         // 新增字段
         totalMovies,
@@ -771,7 +800,7 @@ export class UpstashRedisStorage implements IStorage {
         loginCount: loginStats.loginCount,
         firstLoginTime: loginStats.firstLoginTime,
         lastLoginTime: loginStats.lastLoginTime,
-        lastLoginDate: loginStats.lastLoginDate
+        lastLoginDate: loginStats.lastLoginDate,
       };
     } catch (error) {
       console.error(`获取用户 ${userName} 统计失败:`, error);
@@ -791,7 +820,7 @@ export class UpstashRedisStorage implements IStorage {
         loginCount: 0,
         firstLoginTime: 0,
         lastLoginTime: 0,
-        lastLoginDate: 0
+        lastLoginDate: 0,
       };
     }
   }
@@ -800,18 +829,21 @@ export class UpstashRedisStorage implements IStorage {
     try {
       // 获取所有用户的播放记录
       const allUsers = await this.getAllUsers();
-      const contentStats: Record<string, {
-        source: string;
-        id: string;
-        title: string;
-        source_name: string;
-        cover: string;
-        year: string;
-        playCount: number;
-        totalWatchTime: number;
-        uniqueUsers: Set<string>;
-        lastPlayed: number;
-      }> = {};
+      const contentStats: Record<
+        string,
+        {
+          source: string;
+          id: string;
+          title: string;
+          source_name: string;
+          cover: string;
+          year: string;
+          playCount: number;
+          totalWatchTime: number;
+          uniqueUsers: Set<string>;
+          lastPlayed: number;
+        }
+      > = {};
 
       for (const username of allUsers) {
         const records = await this.getAllPlayRecords(username);
@@ -854,7 +886,8 @@ export class UpstashRedisStorage implements IStorage {
           year: stat.year,
           playCount: stat.playCount,
           totalWatchTime: stat.totalWatchTime,
-          averageWatchTime: stat.playCount > 0 ? stat.totalWatchTime / stat.playCount : 0,
+          averageWatchTime:
+            stat.playCount > 0 ? stat.totalWatchTime / stat.playCount : 0,
           lastPlayed: stat.lastPlayed,
           uniqueUsers: stat.uniqueUsers.size,
         }))
@@ -902,7 +935,7 @@ export class UpstashRedisStorage implements IStorage {
         loginCount: 0,
         firstLoginTime: null,
         lastLoginTime: null,
-        lastLoginDate: null
+        lastLoginDate: null,
       };
 
       // 更新统计数据

@@ -119,27 +119,27 @@ export default function ShortDramaPage() {
   );
 
   return (
-    <PageLayout activePath="/shortdrama">
-      <div className="min-h-screen bg-white dark:bg-black">
-        <div className="px-4 py-6 sm:px-6 lg:px-8">
+    <PageLayout activePath='/shortdrama'>
+      <div className='min-h-screen bg-white dark:bg-black'>
+        <div className='px-4 py-6 sm:px-6 lg:px-8'>
           {/* 页面标题 */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className='mb-6'>
+            <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
               短剧频道
             </h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            <p className='mt-1 text-sm text-gray-600 dark:text-gray-400'>
               精彩短剧，一刷到底
             </p>
           </div>
 
           {/* 搜索栏 */}
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <div className='mb-6'>
+            <div className='relative'>
+              <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
               <input
-                type="text"
-                placeholder="搜索短剧名称..."
-                className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
+                type='text'
+                placeholder='搜索短剧名称...'
+                className='w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-2 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400'
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
               />
@@ -148,14 +148,14 @@ export default function ShortDramaPage() {
 
           {/* 分类筛选 */}
           {!isSearchMode && (
-            <div className="mb-6">
-              <div className="flex items-center space-x-2 mb-3">
-                <Filter className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className='mb-6'>
+              <div className='flex items-center space-x-2 mb-3'>
+                <Filter className='h-4 w-4 text-gray-500' />
+                <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
                   分类筛选
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className='flex flex-wrap gap-2'>
                 {categories.map((category) => (
                   <button
                     key={category.type_id}
@@ -174,7 +174,7 @@ export default function ShortDramaPage() {
           )}
 
           {/* 短剧网格 */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'>
             {dramas.map((drama, index) => (
               <div
                 key={`${drama.id}-${index}`}
@@ -187,12 +187,12 @@ export default function ShortDramaPage() {
 
           {/* 加载状态 */}
           {loading && (
-            <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className='mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'>
               {Array.from({ length: 12 }).map((_, index) => (
-                <div key={index} className="animate-pulse">
-                  <div className="aspect-[2/3] w-full rounded-lg bg-gray-200 dark:bg-gray-800"></div>
-                  <div className="mt-2 h-4 rounded bg-gray-200 dark:bg-gray-800"></div>
-                  <div className="mt-1 h-3 w-2/3 rounded bg-gray-200 dark:bg-gray-800"></div>
+                <div key={index} className='animate-pulse'>
+                  <div className='aspect-[2/3] w-full rounded-lg bg-gray-200 dark:bg-gray-800'></div>
+                  <div className='mt-2 h-4 rounded bg-gray-200 dark:bg-gray-800'></div>
+                  <div className='mt-1 h-3 w-2/3 rounded bg-gray-200 dark:bg-gray-800'></div>
                 </div>
               ))}
             </div>
@@ -200,20 +200,20 @@ export default function ShortDramaPage() {
 
           {/* 无更多数据提示 */}
           {!loading && !hasMore && dramas.length > 0 && (
-            <div className="mt-8 text-center text-gray-500 dark:text-gray-400">
+            <div className='mt-8 text-center text-gray-500 dark:text-gray-400'>
               已经到底了～
             </div>
           )}
 
           {/* 无搜索结果 */}
           {!loading && dramas.length === 0 && isSearchMode && (
-            <div className="mt-8 text-center">
-              <div className="text-gray-500 dark:text-gray-400">
+            <div className='mt-8 text-center'>
+              <div className='text-gray-500 dark:text-gray-400'>
                 没有找到相关短剧
               </div>
               <button
                 onClick={() => handleSearch('')}
-                className="mt-2 text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                className='mt-2 text-blue-600 hover:text-blue-500 dark:text-blue-400'
               >
                 清除搜索条件
               </button>

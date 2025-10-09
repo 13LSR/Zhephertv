@@ -256,7 +256,11 @@ export class DbManager {
     return null;
   }
 
-  async setCache(key: string, data: any, expireSeconds?: number): Promise<void> {
+  async setCache(
+    key: string,
+    data: any,
+    expireSeconds?: number
+  ): Promise<void> {
     if (typeof this.storage.setCache === 'function') {
       await this.storage.setCache(key, data, expireSeconds);
     }
@@ -318,7 +322,7 @@ export class DbManager {
       lastPlayTime: 0,
       recentRecords: [],
       avgWatchTime: 0,
-      mostWatchedSource: ''
+      mostWatchedSource: '',
     };
   }
 
@@ -338,7 +342,12 @@ export class DbManager {
     _watchTime: number
   ): Promise<void> {
     if (typeof (this.storage as any).updatePlayStatistics === 'function') {
-      await (this.storage as any).updatePlayStatistics(_userName, _source, _id, _watchTime);
+      await (this.storage as any).updatePlayStatistics(
+        _userName,
+        _source,
+        _id,
+        _watchTime
+      );
     }
   }
 
@@ -348,7 +357,11 @@ export class DbManager {
     isFirstLogin?: boolean
   ): Promise<void> {
     if (typeof (this.storage as any).updateUserLoginStats === 'function') {
-      await (this.storage as any).updateUserLoginStats(userName, loginTime, isFirstLogin);
+      await (this.storage as any).updateUserLoginStats(
+        userName,
+        loginTime,
+        isFirstLogin
+      );
     }
   }
 

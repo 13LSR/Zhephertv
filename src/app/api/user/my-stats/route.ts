@@ -14,11 +14,21 @@ function calculateRegistrationDays(startDate: number): number {
   const currentDate = new Date();
 
   // 获取自然日（忽略时分秒）
-  const firstDay = new Date(firstDate.getFullYear(), firstDate.getMonth(), firstDate.getDate());
-  const currentDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+  const firstDay = new Date(
+    firstDate.getFullYear(),
+    firstDate.getMonth(),
+    firstDate.getDate()
+  );
+  const currentDay = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    currentDate.getDate()
+  );
 
   // 计算自然日差值并加1
-  const daysDiff = Math.floor((currentDay.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24));
+  const daysDiff = Math.floor(
+    (currentDay.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24)
+  );
   return daysDiff + 1;
 }
 
@@ -37,8 +47,9 @@ export async function GET(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error: '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks']
+          error:
+            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
+          supportedTypes: ['redis', 'upstash', 'kvrocks'],
         },
         { status: 400 }
       );
@@ -80,10 +91,13 @@ export async function GET(request: NextRequest) {
     // 增强统计数据：添加注册天数和登录天数计算
     const registrationDays = calculateRegistrationDays(userCreatedAt);
     // 登入天数从登入时间计算，而不是观看时间
-    const firstLoginTime = userStats.firstLoginTime || userStats.lastLoginTime || userStats.lastLoginDate || 0;
-    const loginDays = firstLoginTime > 0
-      ? calculateRegistrationDays(firstLoginTime)
-      : 0;
+    const firstLoginTime =
+      userStats.firstLoginTime ||
+      userStats.lastLoginTime ||
+      userStats.lastLoginDate ||
+      0;
+    const loginDays =
+      firstLoginTime > 0 ? calculateRegistrationDays(firstLoginTime) : 0;
 
     console.log('注册天数计算:', {
       userCreatedAt,
@@ -92,14 +106,15 @@ export async function GET(request: NextRequest) {
       firstLoginTime: firstLoginTime,
       firstLoginTimeDate: firstLoginTime ? new Date(firstLoginTime) : null,
       loginDays,
-      calculationSource: firstLoginTime > 0 ? '基于登入时间' : '无登入记录'
+      calculationSource: firstLoginTime > 0 ? '基于登入时间' : '无登入记录',
     });
 
     const enhancedStats = {
       ...userStats,
       // 确保新字段有默认值
       totalMovies: userStats.totalMovies ?? userStats.totalPlays ?? 0,
-      firstWatchDate: userStats.firstWatchDate ?? userStats.lastPlayTime ?? Date.now(),
+      firstWatchDate:
+        userStats.firstWatchDate ?? userStats.lastPlayTime ?? Date.now(),
       lastUpdateTime: userStats.lastUpdateTime ?? Date.now(),
       // 注册天数计算（基于真实的用户创建时间）
       registrationDays,
@@ -110,7 +125,7 @@ export async function GET(request: NextRequest) {
       // 确保包含登入时间（兼容已有字段）
       firstLoginTime: userStats.firstLoginTime ?? 0,
       lastLoginTime: userStats.lastLoginTime ?? userStats.lastLoginDate ?? 0,
-      lastLoginDate: userStats.lastLoginDate ?? userStats.lastLoginTime ?? 0
+      lastLoginDate: userStats.lastLoginDate ?? userStats.lastLoginTime ?? 0,
     };
 
     return NextResponse.json(enhancedStats, { status: 200 });
@@ -138,8 +153,9 @@ export async function POST(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error: '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks']
+          error:
+            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
+          supportedTypes: ['redis', 'upstash', 'kvrocks'],
         },
         { status: 400 }
       );
@@ -184,7 +200,7 @@ export async function POST(request: NextRequest) {
       // 更新首次观看时间（如果还没有设置）
       firstWatchDate: currentStats.firstWatchDate || timestamp,
       // 简单的影片数量统计（这里可以进一步优化为精确去重）
-      totalMovies: currentStats.totalMovies || currentStats.totalPlays || 1
+      totalMovies: currentStats.totalMovies || currentStats.totalPlays || 1,
     };
 
     // 更新统计数据（这里需要扩展存储层支持）
@@ -193,14 +209,17 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      userStats: updatedStats
+      userStats: updatedStats,
     });
   } catch (error) {
     console.error('POST /api/user/my-stats - 详细错误信息:', error);
     return NextResponse.json(
       {
         error: '更新用户统计数据失败',
-        details: process.env.NODE_ENV === 'development' ? (error as Error)?.message : undefined
+        details:
+          process.env.NODE_ENV === 'development'
+            ? (error as Error)?.message
+            : undefined,
       },
       { status: 500 }
     );
@@ -222,8 +241,9 @@ export async function PUT(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error: '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks']
+          error:
+            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
+          supportedTypes: ['redis', 'upstash', 'kvrocks'],
         },
         { status: 400 }
       );
@@ -264,19 +284,24 @@ export async function PUT(request: NextRequest) {
       lastLoginTime: loginTime, // 最后登入时间
       lastLoginDate: loginTime, // 保持兼容性
       // 如果是首次登入，记录首次登入时间
-      firstLoginTime: currentStats.firstLoginTime || currentStats.lastLoginDate || loginTime,
+      firstLoginTime:
+        currentStats.firstLoginTime || currentStats.lastLoginDate || loginTime,
       // 更新登入次数
       loginCount: (currentStats.loginCount || 0) + 1,
-      lastUpdateTime: loginTime
+      lastUpdateTime: loginTime,
     };
 
     // 保存登入统计到数据库
     try {
-      await db.updateUserLoginStats(authInfo.username, loginTime, updatedStats.loginCount === 1);
+      await db.updateUserLoginStats(
+        authInfo.username,
+        loginTime,
+        updatedStats.loginCount === 1
+      );
       console.log('用户登入统计已保存到数据库:', {
         username: authInfo.username,
         loginTime,
-        isFirstLogin: updatedStats.loginCount === 1
+        isFirstLogin: updatedStats.loginCount === 1,
       });
     } catch (saveError) {
       console.error('保存登入统计失败:', saveError);
@@ -287,14 +312,17 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: '登入时间记录成功',
       loginTime,
-      loginCount: updatedStats.loginCount
+      loginCount: updatedStats.loginCount,
     });
   } catch (error) {
     console.error('PUT /api/user/my-stats - 记录登入时间失败:', error);
     return NextResponse.json(
       {
         error: '记录登入时间失败',
-        details: process.env.NODE_ENV === 'development' ? (error as Error)?.message : undefined
+        details:
+          process.env.NODE_ENV === 'development'
+            ? (error as Error)?.message
+            : undefined,
       },
       { status: 500 }
     );
@@ -314,8 +342,9 @@ export async function DELETE(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error: '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks']
+          error:
+            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
+          supportedTypes: ['redis', 'upstash', 'kvrocks'],
         },
         { status: 400 }
       );

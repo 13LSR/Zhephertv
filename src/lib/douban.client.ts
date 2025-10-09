@@ -5,8 +5,8 @@ import { DoubanItem, DoubanResult } from './types';
 
 // 豆瓣数据缓存配置（秒）
 const DOUBAN_CACHE_EXPIRE = {
-  details: 4 * 60 * 60,    // 详情4小时（变化较少）
-  lists: 2 * 60 * 60,     // 列表2小时（更新频繁）
+  details: 4 * 60 * 60, // 详情4小时（变化较少）
+  lists: 2 * 60 * 60, // 列表2小时（更新频繁）
   categories: 2 * 60 * 60, // 分类2小时
   recommends: 2 * 60 * 60, // 推荐2小时
 };
@@ -15,7 +15,7 @@ const DOUBAN_CACHE_EXPIRE = {
 function getCacheKey(prefix: string, params: Record<string, any>): string {
   const sortedParams = Object.keys(params)
     .sort()
-    .map(key => `${key}=${params[key]}`)
+    .map((key) => `${key}=${params[key]}`)
     .join('&');
   return `douban-${prefix}-${sortedParams}`;
 }
@@ -26,7 +26,7 @@ async function getCache(key: string): Promise<any | null> {
     // 优先从统一存储获取
     const cached = await ClientCache.get(key);
     if (cached) return cached;
-    
+
     // 兜底：从localStorage获取（兼容性）
     if (typeof localStorage !== 'undefined') {
       const localCached = localStorage.getItem(key);
@@ -38,7 +38,7 @@ async function getCache(key: string): Promise<any | null> {
         localStorage.removeItem(key);
       }
     }
-    
+
     return null;
   } catch (e) {
     console.warn('获取豆瓣缓存失败:', e);
@@ -47,18 +47,22 @@ async function getCache(key: string): Promise<any | null> {
 }
 
 // 统一缓存设置方法
-async function setCache(key: string, data: any, expireSeconds: number): Promise<void> {
+async function setCache(
+  key: string,
+  data: any,
+  expireSeconds: number
+): Promise<void> {
   try {
     // 主要存储：统一存储
     await ClientCache.set(key, data, expireSeconds);
-    
+
     // 兜底存储：localStorage（兼容性，短期缓存）
     if (typeof localStorage !== 'undefined') {
       try {
         const cacheData = {
           data,
           expire: Date.now() + expireSeconds * 1000,
-          created: Date.now()
+          created: Date.now(),
         };
         localStorage.setItem(key, JSON.stringify(cacheData));
       } catch (e) {
@@ -76,15 +80,15 @@ async function cleanExpiredCache(): Promise<void> {
     // 清理统一存储中的过期缓存
     await ClientCache.clearExpired('douban-');
     await ClientCache.clearExpired('bangumi-');
-    
+
     // 清理localStorage中的过期缓存（兼容性）
     if (typeof localStorage !== 'undefined') {
-      const keys = Object.keys(localStorage).filter(key => 
-        key.startsWith('douban-') || key.startsWith('bangumi-')
+      const keys = Object.keys(localStorage).filter(
+        (key) => key.startsWith('douban-') || key.startsWith('bangumi-')
       );
       let cleanedCount = 0;
-      
-      keys.forEach(key => {
+
+      keys.forEach((key) => {
         try {
           const cached = localStorage.getItem(key);
           if (cached) {
@@ -100,7 +104,7 @@ async function cleanExpiredCache(): Promise<void> {
           cleanedCount++;
         }
       });
-      
+
       if (cleanedCount > 0) {
         console.log(`LocalStorage 清理了 ${cleanedCount} 个过期的豆瓣缓存项`);
       }
@@ -119,51 +123,51 @@ export function getDoubanCacheStats(): {
   if (typeof localStorage === 'undefined') {
     return { totalItems: 0, totalSize: 0, byType: {} };
   }
-  
-  const keys = Object.keys(localStorage).filter(key => 
-    key.startsWith('douban-') || key.startsWith('bangumi-')
+
+  const keys = Object.keys(localStorage).filter(
+    (key) => key.startsWith('douban-') || key.startsWith('bangumi-')
   );
   const byType: Record<string, number> = {};
   let totalSize = 0;
-  
-  keys.forEach(key => {
+
+  keys.forEach((key) => {
     const type = key.split('-')[1]; // douban-{type}-{params} 或 bangumi-{type}
     byType[type] = (byType[type] || 0) + 1;
-    
+
     const data = localStorage.getItem(key);
     if (data) {
       totalSize += data.length;
     }
   });
-  
+
   return {
     totalItems: keys.length,
     totalSize,
-    byType
+    byType,
   };
 }
 
 // 清理所有缓存（豆瓣+bangumi）
 export function clearDoubanCache(): void {
   if (typeof localStorage === 'undefined') return;
-  
-  const keys = Object.keys(localStorage).filter(key => 
-    key.startsWith('douban-') || key.startsWith('bangumi-')
+
+  const keys = Object.keys(localStorage).filter(
+    (key) => key.startsWith('douban-') || key.startsWith('bangumi-')
   );
-  keys.forEach(key => localStorage.removeItem(key));
+  keys.forEach((key) => localStorage.removeItem(key));
   console.log(`清理了 ${keys.length} 个缓存项（豆瓣+Bangumi）`);
 }
 
 // 初始化缓存系统（应该在应用启动时调用）
 export async function initDoubanCache(): Promise<void> {
   if (typeof window === 'undefined') return;
-  
+
   // 立即清理一次过期缓存
   await cleanExpiredCache();
-  
+
   // 每10分钟清理一次过期缓存
   setInterval(() => cleanExpiredCache(), 10 * 60 * 1000);
-  
+
   console.log('缓存系统已初始化（豆瓣+Bangumi）');
 }
 
@@ -234,8 +238,8 @@ async function fetchWithTimeout(
     proxyUrl === 'https://cors-anywhere.com/'
       ? `${proxyUrl}${url}`
       : proxyUrl
-        ? `${proxyUrl}${encodeURIComponent(url)}`
-        : url;
+      ? `${proxyUrl}${encodeURIComponent(url)}`
+      : url;
 
   const fetchOptions: RequestInit = {
     signal: controller.signal,
@@ -259,12 +263,12 @@ async function fetchWithTimeout(
 
 function getDoubanProxyConfig(): {
   proxyType:
-  | 'direct'
-  | 'cors-proxy-zwei'
-  | 'cmliussss-cdn-tencent'
-  | 'cmliussss-cdn-ali'
-  | 'cors-anywhere'
-  | 'custom';
+    | 'direct'
+    | 'cors-proxy-zwei'
+    | 'cmliussss-cdn-tencent'
+    | 'cmliussss-cdn-ali'
+    | 'cors-anywhere'
+    | 'custom';
   proxyUrl: string;
 } {
   const doubanProxyType =
@@ -312,8 +316,8 @@ export async function fetchDoubanCategories(
   const target = useTencentCDN
     ? `https://m.douban.cmliussss.net/rexxar/api/v2/subject/recent_hot/${kind}?start=${pageStart}&limit=${pageLimit}&category=${category}&type=${type}`
     : useAliCDN
-      ? `https://m.douban.cmliussss.com/rexxar/api/v2/subject/recent_hot/${kind}?start=${pageStart}&limit=${pageLimit}&category=${category}&type=${type}`
-      : `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=${pageStart}&limit=${pageLimit}&category=${category}&type=${type}`;
+    ? `https://m.douban.cmliussss.com/rexxar/api/v2/subject/recent_hot/${kind}?start=${pageStart}&limit=${pageLimit}&category=${category}&type=${type}`
+    : `https://m.douban.com/rexxar/api/v2/subject/recent_hot/${kind}?start=${pageStart}&limit=${pageLimit}&category=${category}&type=${type}`;
 
   try {
     const response = await fetchWithTimeout(
@@ -361,21 +365,30 @@ export async function getDoubanCategories(
   params: DoubanCategoriesParams
 ): Promise<DoubanResult> {
   const { kind, category, type, pageLimit = 20, pageStart = 0 } = params;
-  
+
   // 检查缓存
-  const cacheKey = getCacheKey('categories', { kind, category, type, pageLimit, pageStart });
+  const cacheKey = getCacheKey('categories', {
+    kind,
+    category,
+    type,
+    pageLimit,
+    pageStart,
+  });
   const cached = await getCache(cacheKey);
   if (cached) {
     console.log(`豆瓣分类缓存命中: ${kind}/${category}/${type}`);
     return cached;
   }
-  
+
   const { proxyType, proxyUrl } = getDoubanProxyConfig();
   let result: DoubanResult;
-  
+
   switch (proxyType) {
     case 'cors-proxy-zwei':
-      result = await fetchDoubanCategories(params, 'https://ciao-cors.is-an.org/');
+      result = await fetchDoubanCategories(
+        params,
+        'https://ciao-cors.is-an.org/'
+      );
       break;
     case 'cmliussss-cdn-tencent':
       result = await fetchDoubanCategories(params, '', true, false);
@@ -384,7 +397,10 @@ export async function getDoubanCategories(
       result = await fetchDoubanCategories(params, '', false, true);
       break;
     case 'cors-anywhere':
-      result = await fetchDoubanCategories(params, 'https://cors-anywhere.com/');
+      result = await fetchDoubanCategories(
+        params,
+        'https://cors-anywhere.com/'
+      );
       break;
     case 'custom':
       result = await fetchDoubanCategories(params, proxyUrl);
@@ -397,13 +413,13 @@ export async function getDoubanCategories(
       result = await response.json();
       break;
   }
-  
+
   // 保存到缓存
   if (result.code === 200) {
     await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.categories);
     console.log(`豆瓣分类已缓存: ${kind}/${category}/${type}`);
   }
-  
+
   return result;
 }
 
@@ -418,7 +434,7 @@ export async function getDoubanList(
   params: DoubanListParams
 ): Promise<DoubanResult> {
   const { tag, type, pageLimit = 20, pageStart = 0 } = params;
-  
+
   // 检查缓存
   const cacheKey = getCacheKey('lists', { tag, type, pageLimit, pageStart });
   const cached = await getCache(cacheKey);
@@ -426,10 +442,10 @@ export async function getDoubanList(
     console.log(`豆瓣列表缓存命中: ${type}/${tag}/${pageStart}`);
     return cached;
   }
-  
+
   const { proxyType, proxyUrl } = getDoubanProxyConfig();
   let result: DoubanResult;
-  
+
   switch (proxyType) {
     case 'cors-proxy-zwei':
       result = await fetchDoubanList(params, 'https://ciao-cors.is-an.org/');
@@ -454,13 +470,13 @@ export async function getDoubanList(
       result = await response.json();
       break;
   }
-  
+
   // 保存到缓存
   if (result.code === 200) {
     await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.lists);
     console.log(`豆瓣列表已缓存: ${type}/${tag}/${pageStart}`);
   }
-  
+
   return result;
 }
 
@@ -492,8 +508,8 @@ export async function fetchDoubanList(
   const target = useTencentCDN
     ? `https://movie.douban.cmliussss.net/j/search_subjects?type=${type}&tag=${tag}&sort=recommend&page_limit=${pageLimit}&page_start=${pageStart}`
     : useAliCDN
-      ? `https://movie.douban.cmliussss.com/j/search_subjects?type=${type}&tag=${tag}&sort=recommend&page_limit=${pageLimit}&page_start=${pageStart}`
-      : `https://movie.douban.com/j/search_subjects?type=${type}&tag=${tag}&sort=recommend&page_limit=${pageLimit}&page_start=${pageStart}`;
+    ? `https://movie.douban.cmliussss.com/j/search_subjects?type=${type}&tag=${tag}&sort=recommend&page_limit=${pageLimit}&page_start=${pageStart}`
+    : `https://movie.douban.com/j/search_subjects?type=${type}&tag=${tag}&sort=recommend&page_limit=${pageLimit}&page_start=${pageStart}`;
 
   try {
     const response = await fetchWithTimeout(
@@ -562,23 +578,35 @@ export async function getDoubanRecommends(
     platform,
     sort,
   } = params;
-  
+
   // 检查缓存
-  const cacheKey = getCacheKey('recommends', { 
-    kind, pageLimit, pageStart, category, format, label, region, year, platform, sort 
+  const cacheKey = getCacheKey('recommends', {
+    kind,
+    pageLimit,
+    pageStart,
+    category,
+    format,
+    label,
+    region,
+    year,
+    platform,
+    sort,
   });
   const cached = await getCache(cacheKey);
   if (cached) {
     console.log(`豆瓣推荐缓存命中: ${kind}/${category || 'all'}`);
     return cached;
   }
-  
+
   const { proxyType, proxyUrl } = getDoubanProxyConfig();
   let result: DoubanResult;
-  
+
   switch (proxyType) {
     case 'cors-proxy-zwei':
-      result = await fetchDoubanRecommends(params, 'https://ciao-cors.is-an.org/');
+      result = await fetchDoubanRecommends(
+        params,
+        'https://ciao-cors.is-an.org/'
+      );
       break;
     case 'cmliussss-cdn-tencent':
       result = await fetchDoubanRecommends(params, '', true, false);
@@ -587,7 +615,10 @@ export async function getDoubanRecommends(
       result = await fetchDoubanRecommends(params, '', false, true);
       break;
     case 'cors-anywhere':
-      result = await fetchDoubanRecommends(params, 'https://cors-anywhere.com/');
+      result = await fetchDoubanRecommends(
+        params,
+        'https://cors-anywhere.com/'
+      );
       break;
     case 'custom':
       result = await fetchDoubanRecommends(params, proxyUrl);
@@ -600,13 +631,13 @@ export async function getDoubanRecommends(
       result = await response.json();
       break;
   }
-  
+
   // 保存到缓存
   if (result.code === 200) {
     await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.recommends);
     console.log(`豆瓣推荐已缓存: ${kind}/${category || 'all'}`);
   }
-  
+
   return result;
 }
 
@@ -641,22 +672,22 @@ export async function getDoubanDetails(id: string): Promise<{
     console.log(`豆瓣详情缓存命中: ${id}`);
     return cached;
   }
-  
+
   try {
     const response = await fetch(`/api/douban/details?id=${id}`);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    
+
     const result = await response.json();
-    
+
     // 保存到缓存
     if (result.code === 200) {
       await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.details);
       console.log(`豆瓣详情已缓存: ${id}`);
     }
-    
+
     return result;
   } catch (error) {
     return {
@@ -727,8 +758,8 @@ async function fetchDoubanRecommends(
   const baseUrl = useTencentCDN
     ? `https://m.douban.cmliussss.net/rexxar/api/v2/${kind}/recommend`
     : useAliCDN
-      ? `https://m.douban.cmliussss.com/rexxar/api/v2/${kind}/recommend`
-      : `https://m.douban.com/rexxar/api/v2/${kind}/recommend`;
+    ? `https://m.douban.cmliussss.com/rexxar/api/v2/${kind}/recommend`
+    : `https://m.douban.com/rexxar/api/v2/${kind}/recommend`;
   const reqParams = new URLSearchParams();
   reqParams.append('refresh', '0');
   reqParams.append('start', pageStart.toString());
@@ -794,7 +825,12 @@ export async function getDoubanActorMovies(
   }
 
   // 检查缓存
-  const cacheKey = getCacheKey('actor', { actorName, type, pageLimit, pageStart });
+  const cacheKey = getCacheKey('actor', {
+    actorName,
+    type,
+    pageLimit,
+    pageStart,
+  });
   const cached = await getCache(cacheKey);
   if (cached) {
     console.log(`豆瓣演员搜索缓存命中: ${actorName}/${type}`);
@@ -803,15 +839,19 @@ export async function getDoubanActorMovies(
 
   try {
     // 使用豆瓣搜索API
-    const searchUrl = `https://search.douban.com/movie/subject_search?search_text=${encodeURIComponent(actorName.trim())}`;
+    const searchUrl = `https://search.douban.com/movie/subject_search?search_text=${encodeURIComponent(
+      actorName.trim()
+    )}`;
 
     const response = await fetch(searchUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Referer': 'https://www.douban.com/',
-      }
+        Referer: 'https://www.douban.com/',
+      },
     });
 
     if (!response.ok) {
@@ -833,7 +873,10 @@ export async function getDoubanActorMovies(
     let filteredItems = items.slice(1).filter((item: any) => {
       // 过滤掉书籍等非影视内容
       const abstract = item.abstract || '';
-      const isBook = abstract.includes('出版') || abstract.includes('页数') || item.url?.includes('/book/');
+      const isBook =
+        abstract.includes('出版') ||
+        abstract.includes('页数') ||
+        item.url?.includes('/book/');
       const isPerson = item.url?.includes('/celebrity/');
       return !isBook && !isPerson;
     });
@@ -842,12 +885,21 @@ export async function getDoubanActorMovies(
     if (type === 'movie') {
       filteredItems = filteredItems.filter((item: any) => {
         const abstract = item.abstract || '';
-        return !abstract.includes('季') && !abstract.includes('集') && !abstract.includes('剧集');
+        return (
+          !abstract.includes('季') &&
+          !abstract.includes('集') &&
+          !abstract.includes('剧集')
+        );
       });
     } else if (type === 'tv') {
       filteredItems = filteredItems.filter((item: any) => {
         const abstract = item.abstract || '';
-        return abstract.includes('季') || abstract.includes('集') || abstract.includes('剧集') || abstract.includes('电视');
+        return (
+          abstract.includes('季') ||
+          abstract.includes('集') ||
+          abstract.includes('剧集') ||
+          abstract.includes('电视')
+        );
       });
     }
 
@@ -867,19 +919,21 @@ export async function getDoubanActorMovies(
         title: item.title || '',
         poster: item.cover_url || '',
         rate: item.rating?.value ? item.rating.value.toFixed(1) : '',
-        year: year
+        year: year,
       };
     });
 
     const result = {
       code: 200,
       message: '获取成功',
-      list: list
+      list: list,
     };
 
     // 保存到缓存
     await setCache(cacheKey, result, DOUBAN_CACHE_EXPIRE.lists);
-    console.log(`豆瓣演员搜索已缓存: ${actorName}/${type}，找到 ${list.length} 个结果`);
+    console.log(
+      `豆瓣演员搜索已缓存: ${actorName}/${type}，找到 ${list.length} 个结果`
+    );
 
     return result;
   } catch (error) {
@@ -887,7 +941,7 @@ export async function getDoubanActorMovies(
     return {
       code: 500,
       message: `搜索演员 ${actorName} 失败: ${(error as Error).message}`,
-      list: []
+      list: [],
     };
   }
 }

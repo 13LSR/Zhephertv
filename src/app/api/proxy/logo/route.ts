@@ -2,11 +2,13 @@
 
 import { NextResponse } from 'next/server';
 
-
 export const runtime = 'nodejs';
 
 // Logo 缓存管理
-const logoCache = new Map<string, { data: ArrayBuffer; contentType: string; timestamp: number; etag?: string }>();
+const logoCache = new Map<
+  string,
+  { data: ArrayBuffer; contentType: string; timestamp: number; etag?: string }
+>();
 const LOGO_CACHE_TTL = 86400000; // 24小时
 const MAX_CACHE_SIZE = 500;
 
@@ -43,7 +45,7 @@ const logoStats = {
 function cleanupExpiredCache() {
   const now = Date.now();
   let cleanedCount = 0;
-  
+
   // 使用 Array.from() 来避免迭代器问题
   const cacheEntries = Array.from(logoCache.entries());
   for (const [key, value] of cacheEntries) {
@@ -52,38 +54,56 @@ function cleanupExpiredCache() {
       cleanedCount++;
     }
   }
-  
+
   // 如果缓存仍然过大，删除最老的条目
   if (logoCache.size > MAX_CACHE_SIZE) {
-    const entries = Array.from(logoCache.entries()).sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const entries = Array.from(logoCache.entries()).sort(
+      (a, b) => a[1].timestamp - b[1].timestamp
+    );
     const toDelete = entries.slice(0, entries.length - MAX_CACHE_SIZE);
     toDelete.forEach(([key]) => logoCache.delete(key));
     cleanedCount += toDelete.length;
   }
-  
+
   if (cleanedCount > 0 && process.env.NODE_ENV === 'development') {
     console.log(`Cleaned ${cleanedCount} expired logo cache entries`);
   }
 }
 
 // 检测图片格式和大小
-function validateImageResponse(contentType: string | null, contentLength: number): { isValid: boolean; reason?: string } {
+function validateImageResponse(
+  contentType: string | null,
+  contentLength: number
+): { isValid: boolean; reason?: string } {
   if (!contentType) {
     return { isValid: true }; // 允许没有 content-type 的响应
   }
-  
-  const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon'];
-  const isValidType = validTypes.some(type => contentType.toLowerCase().includes(type));
-  
+
+  const validTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+    'image/x-icon',
+    'image/vnd.microsoft.icon',
+  ];
+  const isValidType = validTypes.some((type) =>
+    contentType.toLowerCase().includes(type)
+  );
+
   if (!isValidType) {
     return { isValid: false, reason: `Invalid content type: ${contentType}` };
   }
-  
+
   // 限制图片大小为 5MB
   if (contentLength > 5 * 1024 * 1024) {
-    return { isValid: false, reason: `Image too large: ${contentLength} bytes` };
+    return {
+      isValid: false,
+      reason: `Image too large: ${contentLength} bytes`,
+    };
   }
-  
+
   return { isValid: true };
 }
 
@@ -102,5 +122,8 @@ export async function GET(request: Request) {
 
   // 直播功能已移除
   logoStats.errors++;
-  return NextResponse.json({ error: 'Live streaming feature has been removed' }, { status: 404 });
+  return NextResponse.json(
+    { error: 'Live streaming feature has been removed' },
+    { status: 404 }
+  );
 }

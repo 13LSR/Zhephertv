@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getConfig, refineConfig, getAvailableApiSites } from '@/lib/config';
+import { getAvailableApiSites, getConfig, refineConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 import { getDetailFromApi } from '@/lib/downstream';
 import { SearchResult } from '@/lib/types';

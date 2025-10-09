@@ -95,7 +95,7 @@ function DoubanPageClient() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('useDoubanVirtualization', JSON.stringify(newValue));
     }
-    
+
     // 切换虚拟化模式时，立即同步参数引用，避免一致性检查失败
     currentParamsRef.current = {
       type,
@@ -243,7 +243,7 @@ function DoubanPageClient() {
         snapshot1.selectedWeekday === snapshot2.selectedWeekday &&
         snapshot1.currentPage === snapshot2.currentPage &&
         JSON.stringify(snapshot1.multiLevelSelection) ===
-        JSON.stringify(snapshot2.multiLevelSelection)
+          JSON.stringify(snapshot2.multiLevelSelection)
       );
     },
     []
@@ -387,13 +387,15 @@ function DoubanPageClient() {
       if (data.code === 200) {
         // 更宽松的参数检查：只检查关键参数，忽略currentPage的差异
         const currentSnapshot = { ...currentParamsRef.current };
-        const keyParamsMatch = (
+        const keyParamsMatch =
           requestSnapshot.type === currentSnapshot.type &&
-          requestSnapshot.primarySelection === currentSnapshot.primarySelection &&
-          requestSnapshot.secondarySelection === currentSnapshot.secondarySelection &&
+          requestSnapshot.primarySelection ===
+            currentSnapshot.primarySelection &&
+          requestSnapshot.secondarySelection ===
+            currentSnapshot.secondarySelection &&
           requestSnapshot.selectedWeekday === currentSnapshot.selectedWeekday &&
-          JSON.stringify(requestSnapshot.multiLevelSelection) === JSON.stringify(currentSnapshot.multiLevelSelection)
-        );
+          JSON.stringify(requestSnapshot.multiLevelSelection) ===
+            JSON.stringify(currentSnapshot.multiLevelSelection);
 
         if (keyParamsMatch) {
           setDoubanData(data.list);
@@ -556,13 +558,16 @@ function DoubanPageClient() {
           if (data.code === 200) {
             // 更宽松的参数检查：只检查关键参数，忽略currentPage的差异
             const currentSnapshot = { ...currentParamsRef.current };
-            const keyParamsMatch = (
+            const keyParamsMatch =
               requestSnapshot.type === currentSnapshot.type &&
-              requestSnapshot.primarySelection === currentSnapshot.primarySelection &&
-              requestSnapshot.secondarySelection === currentSnapshot.secondarySelection &&
-              requestSnapshot.selectedWeekday === currentSnapshot.selectedWeekday &&
-              JSON.stringify(requestSnapshot.multiLevelSelection) === JSON.stringify(currentSnapshot.multiLevelSelection)
-            );
+              requestSnapshot.primarySelection ===
+                currentSnapshot.primarySelection &&
+              requestSnapshot.secondarySelection ===
+                currentSnapshot.secondarySelection &&
+              requestSnapshot.selectedWeekday ===
+                currentSnapshot.selectedWeekday &&
+              JSON.stringify(requestSnapshot.multiLevelSelection) ===
+                JSON.stringify(currentSnapshot.multiLevelSelection);
 
             if (keyParamsMatch) {
               setDoubanData((prev) => [...prev, ...data.list]);
@@ -734,7 +739,7 @@ function DoubanPageClient() {
   // 处理虚拟化组件的加载更多请求
   const handleVirtualLoadMore = useCallback(() => {
     if (hasMore && !isLoadingMore) {
-      setCurrentPage(prev => prev + 1);
+      setCurrentPage((prev) => prev + 1);
     }
   }, [hasMore, isLoadingMore]);
 
@@ -743,12 +748,12 @@ function DoubanPageClient() {
     return type === 'movie'
       ? '电影'
       : type === 'tv'
-        ? '电视剧'
-        : type === 'anime'
-          ? '动漫'
-          : type === 'show'
-            ? '综艺'
-            : '自定义';
+      ? '电视剧'
+      : type === 'anime'
+      ? '动漫'
+      : type === 'show'
+      ? '综艺'
+      : '自定义';
   };
 
   const getPageDescription = () => {
@@ -853,24 +858,26 @@ function DoubanPageClient() {
               <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-12 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:gap-x-8 sm:gap-y-20'>
                 {loading || !selectorsReady
                   ? // 显示骨架屏
-                  skeletonData.map((index) => <DoubanCardSkeleton key={index} />)
+                    skeletonData.map((index) => (
+                      <DoubanCardSkeleton key={index} />
+                    ))
                   : // 显示实际数据
-                  doubanData.map((item, index) => (
-                    <div key={`${item.title}-${index}`} className='w-full'>
-                      <VideoCard
-                        from='douban'
-                        title={item.title}
-                        poster={item.poster}
-                        douban_id={Number(item.id)}
-                        rate={item.rate}
-                        year={item.year}
-                        type={type === 'movie' ? 'movie' : ''} // 电影类型严格控制，tv 不控
-                        isBangumi={
-                          type === 'anime' && primarySelection === '每日放送'
-                        }
-                      />
-                    </div>
-                  ))}
+                    doubanData.map((item, index) => (
+                      <div key={`${item.title}-${index}`} className='w-full'>
+                        <VideoCard
+                          from='douban'
+                          title={item.title}
+                          poster={item.poster}
+                          douban_id={Number(item.id)}
+                          rate={item.rate}
+                          year={item.year}
+                          type={type === 'movie' ? 'movie' : ''} // 电影类型严格控制，tv 不控
+                          isBangumi={
+                            type === 'anime' && primarySelection === '每日放送'
+                          }
+                        />
+                      </div>
+                    ))}
               </div>
 
               {/* 加载更多指示器 */}
@@ -896,12 +903,16 @@ function DoubanPageClient() {
 
               {/* 没有更多数据提示 */}
               {!hasMore && doubanData.length > 0 && (
-                <div className='text-center text-gray-500 py-8'>已加载全部内容</div>
+                <div className='text-center text-gray-500 py-8'>
+                  已加载全部内容
+                </div>
               )}
 
               {/* 空状态 */}
               {!loading && doubanData.length === 0 && (
-                <div className='text-center text-gray-500 py-8'>暂无相关内容</div>
+                <div className='text-center text-gray-500 py-8'>
+                  暂无相关内容
+                </div>
               )}
             </>
           )}

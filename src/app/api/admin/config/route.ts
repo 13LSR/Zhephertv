@@ -91,13 +91,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const newConfig: AdminConfig = await request.json();
-    
+
     // 保存新配置
     await db.saveAdminConfig(newConfig);
-    
+
     // 清除缓存，强制下次重新从数据库读取
     clearConfigCache();
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('保存管理员配置失败:', error);

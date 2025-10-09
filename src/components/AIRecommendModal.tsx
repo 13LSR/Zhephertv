@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Brain, ExternalLink, Play, Send, Sparkles, X } from 'lucide-react';
+import { Brain, Send, Sparkles, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 

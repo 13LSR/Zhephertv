@@ -1,8 +1,8 @@
 import { BackButton } from './BackButton';
 import MobileBottomNav from './MobileBottomNav';
 import MobileHeader from './MobileHeader';
-import TopNavbar from './TopNavbar';
 import { ThemeToggle } from './ThemeToggle';
+import TopNavbar from './TopNavbar';
 import { UserMenu } from './UserMenu';
 
 interface PageLayoutProps {

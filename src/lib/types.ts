@@ -198,6 +198,117 @@ export interface DoubanResult {
   list: DoubanItem[];
 }
 
+// ============= 音乐相关类型定义 =============
+
+// 音乐搜索结果
+export interface MusicSearchResult {
+  id: string;
+  name: string;
+  artists: string; // 艺术家名称（字符串格式）
+  artist_string?: string;
+  ar_name?: string;
+  album: string; // 专辑名称
+  al_name?: string;
+  duration: number; // 时长（毫秒）
+  dt?: number;
+  pic?: string; // 封面图片
+  pic_url?: string;
+  al_pic?: string;
+}
+
+// 歌曲详细信息
+export interface SongDetail {
+  id: string;
+  name: string;
+  ar_name: string; // 艺术家
+  al_name: string; // 专辑
+  pic?: string; // 封面
+  al_pic?: string;
+  pic_url?: string;
+  lyric?: string; // 歌词
+  duration?: number; // 时长
+  size?: number; // 文件大小
+  fileSize?: number;
+  url?: string; // 播放链接
+}
+
+// 歌单信息
+export interface Playlist {
+  id: string;
+  name: string;
+  creator?: string; // 创建者
+  description?: string; // 描述
+  trackCount?: number; // 歌曲总数
+  tracks: PlaylistTrack[]; // 歌曲列表
+}
+
+// 歌单中的歌曲
+export interface PlaylistTrack {
+  id: string;
+  name: string;
+  artists: string;
+  artist: string;
+  album: string;
+  duration: number;
+}
+
+// 专辑信息
+export interface Album {
+  id: string;
+  name: string;
+  artist?: string; // 艺术家
+  description?: string; // 描述
+  songs: AlbumSong[]; // 歌曲列表
+}
+
+// 专辑中的歌曲
+export interface AlbumSong {
+  id: string;
+  name: string;
+  artists: string;
+  artist: string;
+  album: string;
+  duration: number;
+}
+
+// MV信息
+export interface MVDetail {
+  id: string;
+  name: string;
+  title?: string;
+  artistName?: string; // 艺术家
+  artist_name?: string;
+  cover?: string; // 封面
+  imgurl?: string;
+  imgurl16v9?: string;
+  duration: number; // 时长（毫秒）
+  playCount?: number; // 播放次数
+  desc?: string; // 描述
+}
+
+// MV播放链接
+export interface MVUrl {
+  id: string;
+  url: string; // 播放链接
+  quality: string; // 画质（1080, 720, 480, 240）
+  size?: number; // 文件大小
+}
+
+// 音乐API响应通用结构
+export interface MusicApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  code?: number;
+}
+
+// 歌词行
+export interface LyricLine {
+  time: number; // 时间（秒）
+  text: string; // 歌词文本
+  index: number; // 索引
+}
+
 // 跳过片头片尾配置数据结构
 export interface SkipConfig {
   enable: boolean; // 是否启用跳过片头片尾

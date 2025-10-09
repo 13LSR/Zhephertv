@@ -1,7 +1,6 @@
 /* eslint-disable no-console,@typescript-eslint/no-explicit-any */
 
-import { NextResponse } from "next/server";
-
+import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
@@ -42,7 +41,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
   const source = searchParams.get('moontv-source');
-  
+
   if (!url) {
     segmentStats.errors++;
     segmentStats.activeStreams--;
@@ -52,5 +51,8 @@ export async function GET(request: Request) {
   // 直播功能已移除
   segmentStats.errors++;
   segmentStats.activeStreams--;
-  return NextResponse.json({ error: 'Live streaming feature has been removed' }, { status: 404 });
+  return NextResponse.json(
+    { error: 'Live streaming feature has been removed' },
+    { status: 404 }
+  );
 }

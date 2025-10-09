@@ -118,7 +118,9 @@ async function searchWithCache(
     });
 
     // 过滤掉集数为 0 的结果
-    const results = allResults.filter((result: SearchResult) => result.episodes.length > 0);
+    const results = allResults.filter(
+      (result: SearchResult) => result.episodes.length > 0
+    );
 
     const pageCount = page === 1 ? data.pagecount || 1 : undefined;
     // 写入缓存（成功）
@@ -127,12 +129,76 @@ async function searchWithCache(
   } catch (error: any) {
     clearTimeout(timeoutId);
     // 识别被 AbortController 中止（超时）
-    const aborted = error?.name === 'AbortError' || error?.code === 20 || error?.message?.includes('aborted');
+    const aborted =
+      error?.name === 'AbortError' ||
+      error?.code === 20 ||
+      error?.message?.includes('aborted');
     if (aborted) {
       setCachedSearchPage(apiSite.key, query, page, 'timeout', []);
     }
     return { results: [] };
   }
+}
+
+/**
+ * 过滤搜索结果，只保留与原始查询相关的结果
+ * @param originalQuery 原始查询
+ * @param results 搜索结果
+ * @returns 过滤后的结果
+ */
+function filterRelevantResults(
+  originalQuery: string,
+  results: SearchResult[]
+): SearchResult[] {
+  const originalWords = originalQuery
+    .toLowerCase()
+    .replace(/[^\w\s\u4e00-\u9fff]/g, '')
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
+
+  // 如果原始查询只有一个词，匹配度要求较低
+  const minMatchThreshold = originalWords.length === 1 ? 0.5 : 0.7;
+
+  return results.filter((result) => {
+    const title = result.title.toLowerCase();
+
+    // 计算匹配的词数
+    let matchedWords = 0;
+    let totalMatchScore = 0;
+
+    originalWords.forEach((word) => {
+      if (title.includes(word)) {
+        matchedWords++;
+        // 长词权重更高
+        totalMatchScore += word.length > 2 ? 2 : 1;
+      }
+    });
+
+    // 计算匹配度
+    const matchRatio = matchedWords / originalWords.length;
+
+    // 特殊情况：标题完全包含原始查询（去除标点符号后）
+    const cleanQuery = originalQuery
+      .replace(/[^\w\s\u4e00-\u9fff]/g, '')
+      .toLowerCase();
+    const cleanTitle = title.replace(/[^\w\s\u4e00-\u9fff]/g, '').toLowerCase();
+
+    if (cleanTitle.includes(cleanQuery)) {
+      return true; // 完全包含，直接通过
+    }
+
+    // 多词查询必须匹配至少70%的词
+    if (originalWords.length > 1 && matchRatio < minMatchThreshold) {
+      return false;
+    }
+
+    // 单词查询必须至少有部分匹配
+    if (originalWords.length === 1 && matchedWords === 0) {
+      return false;
+    }
+
+    return true;
+  });
 }
 
 export async function searchFromApi(
@@ -153,7 +219,11 @@ export async function searchFromApi(
     }
 
     // 尝试所有搜索变体，收集所有结果，然后选择最相关的
-    const allVariantResults: Array<{variant: string, results: SearchResult[], relevanceScore: number}> = [];
+    const allVariantResults: Array<{
+      variant: string;
+      results: SearchResult[];
+      relevanceScore: number;
+    }> = [];
 
     for (const variant of searchVariants) {
       const apiUrl =
@@ -163,17 +233,29 @@ export async function searchFromApi(
 
       try {
         // 使用新的缓存搜索函数处理第一页
-        const firstPageResult = await searchWithCache(apiSite, variant, 1, apiUrl, 8000);
+        const firstPageResult = await searchWithCache(
+          apiSite,
+          variant,
+          1,
+          apiUrl,
+          8000
+        );
 
         if (firstPageResult.results.length > 0) {
           // 计算相关性分数
-          const relevanceScore = calculateRelevanceScore(query, variant, firstPageResult.results);
-          console.log(`[DEBUG] 变体 "${variant}" 找到 ${firstPageResult.results.length} 个结果, 相关性分数: ${relevanceScore}`);
+          const relevanceScore = calculateRelevanceScore(
+            query,
+            variant,
+            firstPageResult.results
+          );
+          console.log(
+            `[DEBUG] 变体 "${variant}" 找到 ${firstPageResult.results.length} 个结果, 相关性分数: ${relevanceScore}`
+          );
 
           allVariantResults.push({
             variant,
             results: firstPageResult.results,
-            relevanceScore
+            relevanceScore,
           });
         } else {
           console.log(`[DEBUG] 变体 "${variant}" 无结果`);
@@ -193,12 +275,14 @@ export async function searchFromApi(
       current.relevanceScore > best.relevanceScore ? current : best
     );
 
-    console.log(`[DEBUG] 选择最佳变体: "${bestResult.variant}", 分数: ${bestResult.relevanceScore}`);
+    console.log(
+      `[DEBUG] 选择最佳变体: "${bestResult.variant}", 分数: ${bestResult.relevanceScore}`
+    );
 
     results = bestResult.results;
     query = bestResult.variant; // 用于后续分页
     pageCountFromFirst = 1; // 重置页数
-    
+
     // 如果所有变体都没有结果，直接返回空数组
     if (results.length === 0) {
       return [];
@@ -225,7 +309,13 @@ export async function searchFromApi(
 
         const pagePromise = (async () => {
           // 使用新的缓存搜索函数处理分页
-          const pageResult = await searchWithCache(apiSite, query, page, pageUrl, 8000);
+          const pageResult = await searchWithCache(
+            apiSite,
+            query,
+            page,
+            pageUrl,
+            8000
+          );
           return pageResult.results;
         })();
 
@@ -243,7 +333,15 @@ export async function searchFromApi(
       });
     }
 
-    return results;
+    // ⚠️ 关键优化：过滤掉与原始查询不相关的结果
+    const originalQuery = searchVariants[0]; // 使用最原始的查询
+    const filteredResults = filterRelevantResults(originalQuery, results);
+
+    console.log(
+      `[DEBUG] ${apiSite.name} 过滤前: ${results.length} 个结果, 过滤后: ${filteredResults.length} 个结果`
+    );
+
+    return filteredResults;
   } catch (error) {
     return [];
   }
@@ -256,7 +354,11 @@ export async function searchFromApi(
  * @param results 搜索结果
  * @returns 相关性分数（越高越相关）
  */
-function calculateRelevanceScore(originalQuery: string, variant: string, results: SearchResult[]): number {
+function calculateRelevanceScore(
+  originalQuery: string,
+  variant: string,
+  results: SearchResult[]
+): number {
   let score = 0;
 
   // 基础分数：结果数量（越多越好，但有上限）
@@ -273,15 +375,19 @@ function calculateRelevanceScore(originalQuery: string, variant: string, results
   // 移除数字变体加分逻辑，依赖智能匹配处理
 
   // 结果质量分数：检查结果标题的匹配程度
-  const originalWords = originalQuery.toLowerCase().replace(/[^\w\s\u4e00-\u9fff]/g, '').split(/\s+/).filter(w => w.length > 0);
+  const originalWords = originalQuery
+    .toLowerCase()
+    .replace(/[^\w\s\u4e00-\u9fff]/g, '')
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
 
-  results.forEach(result => {
+  results.forEach((result) => {
     const title = result.title.toLowerCase();
     let titleScore = 0;
 
     // 检查原始查询中的每个词是否在标题中
     let matchedWords = 0;
-    originalWords.forEach(word => {
+    originalWords.forEach((word) => {
       if (title.includes(word)) {
         // 较长的词（如"血脉诅咒"）给予更高权重
         const wordWeight = word.length > 2 ? 100 : 50;
@@ -337,8 +443,9 @@ function generateSearchVariants(originalQuery: string): string[] {
   variants.push(trimmed);
 
   // 2. 处理中文标点符号变体
-  const chinesePunctuationVariants = generateChinesePunctuationVariants(trimmed);
-  chinesePunctuationVariants.forEach(variant => {
+  const chinesePunctuationVariants =
+    generateChinesePunctuationVariants(trimmed);
+  chinesePunctuationVariants.forEach((variant) => {
     if (!variants.includes(variant)) {
       variants.push(variant);
     }
@@ -394,10 +501,26 @@ function generateSearchVariants(originalQuery: string): string[] {
       }
 
       // 仅使用主关键词搜索（过滤无意义的词）
-      const meaninglessWords = ['the', 'a', 'an', 'and', 'or', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by'];
-      if (!variants.includes(mainKeyword) &&
-          !meaninglessWords.includes(mainKeyword.toLowerCase()) &&
-          mainKeyword.length > 2) {
+      const meaninglessWords = [
+        'the',
+        'a',
+        'an',
+        'and',
+        'or',
+        'of',
+        'in',
+        'on',
+        'at',
+        'to',
+        'for',
+        'with',
+        'by',
+      ];
+      if (
+        !variants.includes(mainKeyword) &&
+        !meaninglessWords.includes(mainKeyword.toLowerCase()) &&
+        mainKeyword.length > 2
+      ) {
         variants.push(mainKeyword);
       }
     }
@@ -473,7 +596,10 @@ function generateChinesePunctuationVariants(query: string): string[] {
   }
 
   // 完全去除所有标点符号
-  const noPunctuation = query.replace(/[：；，。！？、""''（）【】《》:;,.!?"'()[\]<>]/g, '');
+  const noPunctuation = query.replace(
+    /[：；，。！？、""''（）【】《》:;,.!?"'()[\]<>]/g,
+    ''
+  );
   if (noPunctuation !== query && noPunctuation.trim()) {
     variants.push(noPunctuation);
   }

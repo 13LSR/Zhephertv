@@ -5,10 +5,12 @@ import dynamic from 'next/dynamic';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const Grid = dynamic(
-  () => import('react-window').then(mod => ({ default: mod.Grid })),
-  { 
+  () => import('react-window').then((mod) => ({ default: mod.Grid })),
+  {
     ssr: false,
-    loading: () => <div className="animate-pulse h-96 bg-gray-200 dark:bg-gray-800 rounded-lg" />
+    loading: () => (
+      <div className='animate-pulse h-96 bg-gray-200 dark:bg-gray-800 rounded-lg' />
+    ),
   }
 );
 
@@ -21,17 +23,17 @@ import VideoCard from '@/components/VideoCard';
 interface VirtualDoubanGridProps {
   // 豆瓣数据
   doubanData: DoubanItem[];
-  
+
   // 分页相关
   hasMore: boolean;
   isLoadingMore: boolean;
   onLoadMore: () => void;
-  
+
   // 类型和状态
   type: string;
   loading: boolean;
   primarySelection?: string;
-  
+
   // 是否来自番组计划
   isBangumi?: boolean;
 }
@@ -52,15 +54,16 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
   isBangumi = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { columnCount, itemWidth, itemHeight, containerWidth } = useResponsiveGrid(containerRef);
-  
+  const { columnCount, itemWidth, itemHeight, containerWidth } =
+    useResponsiveGrid(containerRef);
+
   // 渐进式加载状态
   const [visibleItemCount, setVisibleItemCount] = useState(INITIAL_BATCH_SIZE);
   const [isVirtualLoadingMore, setIsVirtualLoadingMore] = useState(false);
 
   // 总数据数量
   const totalItemCount = doubanData.length;
-  
+
   // 实际显示的项目数量（考虑渐进式加载）
   const displayItemCount = Math.min(visibleItemCount, totalItemCount);
   const displayData = doubanData.slice(0, displayItemCount);
@@ -76,25 +79,26 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
     const checkContainer = () => {
       const element = containerRef.current;
       const actualWidth = element?.offsetWidth || 0;
-      
+
       console.log('VirtualDoubanGrid container debug:', {
         actualWidth,
         containerWidth,
         offsetWidth: element?.offsetWidth,
         clientWidth: element?.clientWidth,
         scrollWidth: element?.scrollWidth,
-        element: !!element
+        element: !!element,
       });
     };
-    
+
     checkContainer();
   }, [containerWidth]);
 
   // 检查是否还有更多项目可以加载（虚拟层面）
   const hasNextVirtualPage = displayItemCount < totalItemCount;
-  
+
   // 检查是否需要从服务器加载更多数据
-  const needsServerData = displayItemCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore;
+  const needsServerData =
+    displayItemCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore;
 
   // 防止重复调用onLoadMore的ref
   const lastLoadMoreCallRef = useRef<number>(0);
@@ -102,24 +106,30 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
   // 加载更多项目（虚拟层面）
   const loadMoreVirtualItems = useCallback(() => {
     if (isVirtualLoadingMore) return;
-    
+
     setIsVirtualLoadingMore(true);
-    
+
     // 模拟异步加载
     setTimeout(() => {
-      setVisibleItemCount(prev => {
+      setVisibleItemCount((prev) => {
         const newCount = Math.min(prev + LOAD_MORE_BATCH_SIZE, totalItemCount);
-        
+
         // 如果虚拟数据即将用完，触发服务器数据加载
         if (newCount >= totalItemCount * 0.8 && hasMore && !isLoadingMore) {
           onLoadMore();
         }
-        
+
         return newCount;
       });
       setIsVirtualLoadingMore(false);
     }, 100);
-  }, [isVirtualLoadingMore, totalItemCount, hasMore, isLoadingMore, onLoadMore]);
+  }, [
+    isVirtualLoadingMore,
+    totalItemCount,
+    hasMore,
+    isLoadingMore,
+    onLoadMore,
+  ]);
 
   // 网格行数计算
   const rowCount = Math.ceil(displayItemCount / columnCount);
@@ -128,47 +138,49 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
   const isSingleRow = rowCount === 1;
 
   // 渲染单个网格项 - 支持react-window v2.1.0的ariaAttributes
-  const CellComponent = useCallback(({ 
-    ariaAttributes,
-    columnIndex, 
-    rowIndex, 
-    style,
-    displayData: cellDisplayData,
-    type: cellType,
-    primarySelection: cellPrimarySelection,
-    isBangumi: cellIsBangumi,
-    columnCount: cellColumnCount,
-    displayItemCount: cellDisplayItemCount,
-  }: any) => {
-    const index = rowIndex * cellColumnCount + columnIndex;
-    
-    // 如果超出显示范围，返回隐藏的占位符
-    if (index >= cellDisplayItemCount) {
-      return <div style={{ ...style, visibility: 'hidden' }} />;
-    }
+  const CellComponent = useCallback(
+    ({
+      ariaAttributes,
+      columnIndex,
+      rowIndex,
+      style,
+      displayData: cellDisplayData,
+      type: cellType,
+      primarySelection: cellPrimarySelection,
+      isBangumi: cellIsBangumi,
+      columnCount: cellColumnCount,
+      displayItemCount: cellDisplayItemCount,
+    }: any) => {
+      const index = rowIndex * cellColumnCount + columnIndex;
 
-    const item = cellDisplayData[index];
+      // 如果超出显示范围，返回隐藏的占位符
+      if (index >= cellDisplayItemCount) {
+        return <div style={{ ...style, visibility: 'hidden' }} />;
+      }
 
-    if (!item) {
-      return <div style={{ ...style, visibility: 'hidden' }} />;
-    }
+      const item = cellDisplayData[index];
 
-    return (
-      <div style={{ ...style, padding: '8px' }} {...ariaAttributes}>
-        <VideoCard
-          from='douban'
-          title={item.title}
-          poster={item.poster}
-          douban_id={Number(item.id)}
-          rate={item.rate}
-          year={item.year}
-          type={cellType === 'movie' ? 'movie' : ''} // 电影类型严格控制，tv 不控
-          isBangumi={cellIsBangumi}
-        />
-      </div>
-    );
-  }, []);
+      if (!item) {
+        return <div style={{ ...style, visibility: 'hidden' }} />;
+      }
 
+      return (
+        <div style={{ ...style, padding: '8px' }} {...ariaAttributes}>
+          <VideoCard
+            from='douban'
+            title={item.title}
+            poster={item.poster}
+            douban_id={Number(item.id)}
+            rate={item.rate}
+            year={item.year}
+            type={cellType === 'movie' ? 'movie' : ''} // 电影类型严格控制，tv 不控
+            isBangumi={cellIsBangumi}
+          />
+        </div>
+      );
+    },
+    []
+  );
 
   // 生成骨架屏数据
   const skeletonData = Array.from({ length: 25 }, (_, index) => index);
@@ -178,7 +190,9 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
       {loading ? (
         // 加载状态显示骨架屏
         <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-12 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:gap-x-8 sm:gap-y-20'>
-          {skeletonData.map((index) => <DoubanCardSkeleton key={index} />)}
+          {skeletonData.map((index) => (
+            <DoubanCardSkeleton key={index} />
+          ))}
         </div>
       ) : totalItemCount === 0 ? (
         <div className='text-center text-gray-500 py-8'>暂无相关内容</div>
@@ -207,7 +221,7 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
           rowHeight={itemHeight + 16}
           overscanCount={3}
           // 添加ARIA支持提升无障碍体验
-          role="grid"
+          role='grid'
           aria-label={`豆瓣${type}列表，共${displayItemCount}个结果`}
           aria-rowcount={rowCount}
           aria-colcount={columnCount}
@@ -244,7 +258,7 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
           }}
         />
       )}
-      
+
       {/* 加载更多指示器 */}
       {containerWidth > 100 && (isVirtualLoadingMore || isLoadingMore) && (
         <div className='flex justify-center items-center py-4'>
@@ -254,13 +268,16 @@ export const VirtualDoubanGrid: React.FC<VirtualDoubanGridProps> = ({
           </span>
         </div>
       )}
-      
+
       {/* 已加载完所有内容的提示 */}
-      {containerWidth > 100 && !hasMore && !hasNextVirtualPage && displayItemCount > INITIAL_BATCH_SIZE && (
-        <div className='text-center py-4 text-sm text-gray-500 dark:text-gray-400'>
-          已显示全部 {displayItemCount} 个结果
-        </div>
-      )}
+      {containerWidth > 100 &&
+        !hasMore &&
+        !hasNextVirtualPage &&
+        displayItemCount > INITIAL_BATCH_SIZE && (
+          <div className='text-center py-4 text-sm text-gray-500 dark:text-gray-400'>
+            已显示全部 {displayItemCount} 个结果
+          </div>
+        )}
     </div>
   );
 };

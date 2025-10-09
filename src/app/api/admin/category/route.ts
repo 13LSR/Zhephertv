@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
 
     // 持久化到存储
     await db.saveAdminConfig(adminConfig);
-    
+
     // 清除配置缓存，强制下次重新从数据库读取
     clearConfigCache();
 

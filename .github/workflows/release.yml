@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'  # 匹配 v1.0.0, v1.0.1 等格式的标签
+      - 'v*.*.*' # 匹配 v1.0.0, v1.0.1 等格式的标签
 
 permissions:
   contents: write
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 获取完整历史，用于生成变更日志
+          fetch-depth: 0 # 获取完整历史，用于生成变更日志
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

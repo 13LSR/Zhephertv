@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     try {
       const config = await getConfig();
       const allowRegister = config.UserConfig?.AllowRegister !== false; // 默认允许注册
-      
+
       if (!allowRegister) {
         return NextResponse.json(
           { error: '管理员已关闭用户注册功能' },
@@ -92,20 +92,26 @@ export async function POST(req: NextRequest) {
       }
     } catch (err) {
       console.error('检查注册配置失败', err);
-      return NextResponse.json({ error: '注册失败，请稍后重试' }, { status: 500 });
+      return NextResponse.json(
+        { error: '注册失败，请稍后重试' },
+        { status: 500 }
+      );
     }
 
     // 验证输入
     if (!username || typeof username !== 'string' || username.trim() === '') {
       return NextResponse.json({ error: '用户名不能为空' }, { status: 400 });
     }
-    
+
     if (!password || typeof password !== 'string') {
       return NextResponse.json({ error: '密码不能为空' }, { status: 400 });
     }
 
     if (password !== confirmPassword) {
-      return NextResponse.json({ error: '两次输入的密码不一致' }, { status: 400 });
+      return NextResponse.json(
+        { error: '两次输入的密码不一致' },
+        { status: 400 }
+      );
     }
 
     if (password.length < 6) {
@@ -129,7 +135,10 @@ export async function POST(req: NextRequest) {
       // 检查用户是否已存在
       const userExists = await db.checkUserExist(username);
       if (userExists) {
-        return NextResponse.json({ error: '该用户名已被注册' }, { status: 400 });
+        return NextResponse.json(
+          { error: '该用户名已被注册' },
+          { status: 400 }
+        );
       }
 
       // 注册用户
@@ -152,11 +161,11 @@ export async function POST(req: NextRequest) {
       clearConfigCache();
 
       // 注册成功后自动登录
-      const response = NextResponse.json({ 
-        ok: true, 
-        message: '注册成功，已自动登录' 
+      const response = NextResponse.json({
+        ok: true,
+        message: '注册成功，已自动登录',
       });
-      
+
       const cookieValue = await generateAuthCookie(
         username,
         password,
@@ -177,7 +186,10 @@ export async function POST(req: NextRequest) {
       return response;
     } catch (err) {
       console.error('注册用户失败', err);
-      return NextResponse.json({ error: '注册失败，请稍后重试' }, { status: 500 });
+      return NextResponse.json(
+        { error: '注册失败，请稍后重试' },
+        { status: 500 }
+      );
     }
   } catch (error) {
     console.error('注册接口异常', error);

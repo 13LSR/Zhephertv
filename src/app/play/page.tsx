@@ -335,192 +335,49 @@ function PlayPageClient() {
           if (data.results && data.results.length > 0) {
             allResults.push(...data.results);
 
-            // 移除早期退出策略，让downstream的相关性评分发挥作用
-
-            // 处理搜索结果，使用智能模糊匹配（与downstream评分逻辑保持一致）
+            // ⚠️ 信任搜索API的相关性过滤，不再做额外的严格过滤
+            // 搜索API已经在downstream层面进行了相关性过滤，这里只需要简单的年份和类型匹配
             const filteredResults = data.results.filter(
               (result: SearchResult) => {
-                const queryTitle = videoTitleRef.current
-                  .replaceAll(' ', '')
-                  .toLowerCase();
-                const resultTitle = result.title
-                  .replaceAll(' ', '')
-                  .toLowerCase();
-
-                // 智能标题匹配：支持数字变体和标点符号变化
-                const titleMatch =
-                  resultTitle.includes(queryTitle) ||
-                  queryTitle.includes(resultTitle) ||
-                  // 移除数字和标点后匹配（针对"死神来了：血脉诅咒" vs "死神来了6：血脉诅咒"）
-                  resultTitle.replace(/\d+|[：:]/g, '') ===
-                    queryTitle.replace(/\d+|[：:]/g, '') ||
-                  // 通用关键词匹配：检查是否包含查询中的所有关键词
-                  checkAllKeywordsMatch(queryTitle, resultTitle);
-
+                // 年份匹配（如果提供了年份）
                 const yearMatch = videoYearRef.current
                   ? result.year.toLowerCase() ===
                     videoYearRef.current.toLowerCase()
                   : true;
+
+                // 类型匹配（如果提供了类型）
                 const typeMatch = searchType
                   ? (searchType === 'tv' && result.episodes.length > 1) ||
                     (searchType === 'movie' && result.episodes.length === 1)
                   : true;
 
-                return titleMatch && yearMatch && typeMatch;
+                return yearMatch && typeMatch;
               }
             );
 
             if (filteredResults.length > 0) {
               console.log(
-                `变体 "${variant}" 找到 ${filteredResults.length} 个精确匹配结果`
+                `变体 "${variant}" 找到 ${filteredResults.length} 个匹配结果`
               );
               bestResults = filteredResults;
-              break; // 找到精确匹配就停止
+              break; // 找到匹配就停止
             }
           }
         }
 
-        // 智能匹配：英文标题严格匹配，中文标题宽松匹配
+        // 直接使用搜索API返回的结果，不再做复杂的二次匹配
         let finalResults = bestResults;
 
-        // 如果没有精确匹配，根据语言类型进行不同策略的匹配
-        if (bestResults.length === 0) {
-          const queryTitle = videoTitleRef.current.toLowerCase().trim();
-          const allCandidates = allResults;
+        // 如果没有精确匹配，直接使用所有搜索结果（已经被搜索API过滤过）
+        if (bestResults.length === 0 && allResults.length > 0) {
+          console.log(`使用搜索API过滤后的所有结果: ${allResults.length} 个`);
 
-          // 检测查询主要语言（英文 vs 中文）
-          const englishChars = (queryTitle.match(/[a-z\s]/g) || []).length;
-          const chineseChars = (queryTitle.match(/[\u4e00-\u9fff]/g) || [])
-            .length;
-          const isEnglishQuery = englishChars > chineseChars;
-
-          console.log(
-            `搜索语言检测: ${
-              isEnglishQuery ? '英文' : '中文'
-            } - "${queryTitle}"`
+          // 去重：基于source-id
+          finalResults = Array.from(
+            new Map(
+              allResults.map((item) => [`${item.source}-${item.id}`, item])
+            ).values()
           );
-
-          let relevantMatches;
-
-          if (isEnglishQuery) {
-            // 英文查询：使用词汇匹配策略，避免不相关结果
-            console.log('使用英文词汇匹配策略');
-
-            // 提取有效英文词汇（过滤停用词）
-            const queryWords = queryTitle
-              .toLowerCase()
-              .replace(/[^\w\s]/g, ' ')
-              .split(/\s+/)
-              .filter(
-                (word) =>
-                  word.length > 2 &&
-                  ![
-                    'the',
-                    'a',
-                    'an',
-                    'and',
-                    'or',
-                    'of',
-                    'in',
-                    'on',
-                    'at',
-                    'to',
-                    'for',
-                    'with',
-                    'by',
-                  ].includes(word)
-              );
-
-            console.log('英文关键词:', queryWords);
-
-            relevantMatches = allCandidates.filter((result) => {
-              const title = result.title.toLowerCase();
-              const titleWords = title
-                .replace(/[^\w\s]/g, ' ')
-                .split(/\s+/)
-                .filter((word) => word.length > 1);
-
-              // 计算词汇匹配度：标题必须包含至少50%的查询关键词
-              const matchedWords = queryWords.filter((queryWord) =>
-                titleWords.some(
-                  (titleWord) =>
-                    titleWord.includes(queryWord) ||
-                    queryWord.includes(titleWord) ||
-                    // 允许部分相似（如gumball vs gum）
-                    (queryWord.length > 4 &&
-                      titleWord.length > 4 &&
-                      queryWord.substring(0, 4) === titleWord.substring(0, 4))
-                )
-              );
-
-              const wordMatchRatio = matchedWords.length / queryWords.length;
-              if (wordMatchRatio >= 0.5) {
-                console.log(
-                  `英文词汇匹配 (${matchedWords.length}/${
-                    queryWords.length
-                  }): "${result.title}" - 匹配词: [${matchedWords.join(', ')}]`
-                );
-                return true;
-              }
-              return false;
-            });
-          } else {
-            // 中文查询：宽松匹配，保持现有行为
-            console.log('使用中文宽松匹配策略');
-            relevantMatches = allCandidates.filter((result) => {
-              const title = result.title.toLowerCase();
-              const normalizedQuery = queryTitle.replace(
-                /[^\w\u4e00-\u9fff]/g,
-                ''
-              );
-              const normalizedTitle = title.replace(/[^\w\u4e00-\u9fff]/g, '');
-
-              // 包含匹配或50%相似度
-              if (
-                normalizedTitle.includes(normalizedQuery) ||
-                normalizedQuery.includes(normalizedTitle)
-              ) {
-                console.log(`中文包含匹配: "${result.title}"`);
-                return true;
-              }
-
-              const commonChars = Array.from(normalizedQuery).filter((char) =>
-                normalizedTitle.includes(char)
-              ).length;
-              const similarity = commonChars / normalizedQuery.length;
-              if (similarity >= 0.5) {
-                console.log(
-                  `中文相似匹配 (${(similarity * 100).toFixed(1)}%): "${
-                    result.title
-                  }"`
-                );
-                return true;
-              }
-              return false;
-            });
-          }
-
-          console.log(
-            `匹配结果: ${relevantMatches.length}/${allCandidates.length}`
-          );
-
-          const maxResults = isEnglishQuery ? 5 : 20; // 英文更严格控制结果数
-          if (
-            relevantMatches.length > 0 &&
-            relevantMatches.length <= maxResults
-          ) {
-            finalResults = Array.from(
-              new Map(
-                relevantMatches.map((item) => [
-                  `${item.source}-${item.id}`,
-                  item,
-                ])
-              ).values()
-            );
-          } else {
-            console.log('没有找到合理的匹配，返回空结果');
-            finalResults = [];
-          }
         }
 
         console.log(`智能搜索完成，最终返回 ${finalResults.length} 个结果`);
@@ -1957,26 +1814,52 @@ function PlayPageClient() {
               source.source === currentSource && source.id === currentId
           )
         ) {
-          const specificSourceDetail = await fetchSourceDetail(
-            currentSource,
-            currentId
-          );
-          // 将特定源添加到搜索结果前面，确保用户能看到所有源
-          if (specificSourceDetail.length > 0) {
-            sourcesInfo = [...specificSourceDetail, ...sourcesInfo];
-          } else if (sourcesInfo.length === 0) {
-            // 如果特定源获取失败且没有其他搜索结果，显示错误
-            setError(
-              `无法获取指定源(${currentSource})的视频详情，请尝试其他源`
-            );
-            setLoading(false);
-            return;
-          } else {
-            // 如果特定源获取失败但有其他搜索结果，标记不使用特定源
-            console.log(`指定源(${currentSource})获取失败，使用搜索到的其他源`);
+          // ⚠️ 使用直接请求而不是fetchSourceDetail，避免覆盖availableSources
+          try {
+            let detailResponse;
+            if (currentSource === 'shortdrama') {
+              detailResponse = await fetch(
+                `/api/shortdrama/detail?id=${currentId}&episode=1`
+              );
+            } else {
+              detailResponse = await fetch(
+                `/api/detail?source=${currentSource}&id=${currentId}`
+              );
+            }
+
+            if (detailResponse.ok) {
+              const detailData = (await detailResponse.json()) as SearchResult;
+              // 将特定源添加到搜索结果前面
+              sourcesInfo = [detailData, ...sourcesInfo];
+              console.log(`已添加指定源(${currentSource})到搜索结果中`);
+            } else if (sourcesInfo.length === 0) {
+              // 如果特定源获取失败且没有其他搜索结果，显示错误
+              setError(
+                `无法获取指定源(${currentSource})的视频详情，请尝试其他源`
+              );
+              setLoading(false);
+              return;
+            } else {
+              // 如果特定源获取失败但有其他搜索结果，标记不使用特定源
+              console.log(
+                `指定源(${currentSource})获取失败，使用搜索到的其他源`
+              );
+              useSpecificSource = false;
+            }
+          } catch (err) {
+            console.error(`获取指定源(${currentSource})详情失败:`, err);
+            if (sourcesInfo.length === 0) {
+              setError('无法获取视频详情');
+              setLoading(false);
+              return;
+            }
             useSpecificSource = false;
           }
         }
+
+        // ⚠️ 关键修复：确保 availableSources 包含所有搜索到的源
+        console.log(`设置 availableSources: ${sourcesInfo.length} 个源`);
+        setAvailableSources(sourcesInfo);
       }
       if (sourcesInfo.length === 0) {
         setError('未找到匹配结果');

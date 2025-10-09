@@ -29,7 +29,9 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
     (PlayRecord & { key: string })[]
   >([]);
   const [loading, setLoading] = useState(true);
-  const [watchingUpdates, setWatchingUpdates] = useState<WatchingUpdate | null>(null);
+  const [watchingUpdates, setWatchingUpdates] = useState<WatchingUpdate | null>(
+    null
+  );
 
   // 处理播放记录数据更新的函数
   const updatePlayRecords = (allRecords: Record<string, PlayRecord>) => {
@@ -153,19 +155,22 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
   };
 
   // 检查播放记录是否有新集数更新
-  const getNewEpisodesCount = (record: PlayRecord & { key: string }): number => {
+  const getNewEpisodesCount = (
+    record: PlayRecord & { key: string }
+  ): number => {
     if (!watchingUpdates || !watchingUpdates.updatedSeries) return 0;
 
     const { source, id } = parseKey(record.key);
 
     // 在watchingUpdates中查找匹配的剧集
-    const matchedSeries = watchingUpdates.updatedSeries.find(series =>
-      series.sourceKey === source &&
-      series.videoId === id &&
-      series.hasNewEpisode
+    const matchedSeries = watchingUpdates.updatedSeries.find(
+      (series) =>
+        series.sourceKey === source &&
+        series.videoId === id &&
+        series.hasNewEpisode
     );
 
-    return matchedSeries ? (matchedSeries.newEpisodes || 0) : 0;
+    return matchedSeries ? matchedSeries.newEpisodes || 0 : 0;
   };
 
   return (

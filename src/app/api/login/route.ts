@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
       环境变量用户名: process.env.USERNAME,
       环境变量密码: process.env.PASSWORD,
       用户名匹配: username === process.env.USERNAME,
-      密码匹配: password === process.env.PASSWORD
+      密码匹配: password === process.env.PASSWORD,
     });
 
     if (!username || typeof username !== 'string') {

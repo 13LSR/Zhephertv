@@ -25,10 +25,7 @@ export async function GET(request: NextRequest) {
     const episodeNum = parseInt(episode);
 
     if (isNaN(videoId) || isNaN(episodeNum)) {
-      return NextResponse.json(
-        { error: '参数格式错误' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '参数格式错误' }, { status: 400 });
     }
 
     // 解析视频，默认使用代理
@@ -58,17 +55,23 @@ export async function GET(request: NextRequest) {
     // 设置与豆瓣一致的缓存策略
     const cacheTime = await getCacheTime();
     const finalResponse = NextResponse.json(response);
-    finalResponse.headers.set('Cache-Control', `public, max-age=${cacheTime}, s-maxage=${cacheTime}`);
-    finalResponse.headers.set('CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
-    finalResponse.headers.set('Vercel-CDN-Cache-Control', `public, s-maxage=${cacheTime}`);
+    finalResponse.headers.set(
+      'Cache-Control',
+      `public, max-age=${cacheTime}, s-maxage=${cacheTime}`
+    );
+    finalResponse.headers.set(
+      'CDN-Cache-Control',
+      `public, s-maxage=${cacheTime}`
+    );
+    finalResponse.headers.set(
+      'Vercel-CDN-Cache-Control',
+      `public, s-maxage=${cacheTime}`
+    );
     finalResponse.headers.set('Netlify-Vary', 'query');
 
     return finalResponse;
   } catch (error) {
     console.error('短剧解析失败:', error);
-    return NextResponse.json(
-      { error: '服务器内部错误' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '服务器内部错误' }, { status: 500 });
   }
 }

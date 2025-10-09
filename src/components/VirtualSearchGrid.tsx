@@ -5,10 +5,12 @@ import dynamic from 'next/dynamic';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 const Grid = dynamic(
-  () => import('react-window').then(mod => ({ default: mod.Grid })),
-  { 
+  () => import('react-window').then((mod) => ({ default: mod.Grid })),
+  {
     ssr: false,
-    loading: () => <div className="animate-pulse h-96 bg-gray-200 dark:bg-gray-800 rounded-lg" />
+    loading: () => (
+      <div className='animate-pulse h-96 bg-gray-200 dark:bg-gray-800 rounded-lg' />
+    ),
   }
 );
 
@@ -23,14 +25,14 @@ interface VirtualSearchGridProps {
   filteredResults: SearchResult[];
   aggregatedResults: [string, SearchResult[]][];
   filteredAggResults: [string, SearchResult[]][];
-  
+
   // 视图模式
   viewMode: 'agg' | 'all';
-  
+
   // 搜索相关
   searchQuery: string;
   isLoading: boolean;
-  
+
   // VideoCard相关props
   groupRefs: React.MutableRefObject<Map<string, React.RefObject<any>>>;
   groupStatsRef: React.MutableRefObject<Map<string, any>>;
@@ -57,8 +59,9 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
   computeGroupStats,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { columnCount, itemWidth, itemHeight, containerWidth } = useResponsiveGrid(containerRef);
-  
+  const { columnCount, itemWidth, itemHeight, containerWidth } =
+    useResponsiveGrid(containerRef);
+
   // 渐进式加载状态
   const [visibleItemCount, setVisibleItemCount] = useState(INITIAL_BATCH_SIZE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -82,17 +85,17 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
     const checkContainer = () => {
       const element = containerRef.current;
       const actualWidth = element?.offsetWidth || 0;
-      
+
       console.log('VirtualSearchGrid container debug:', {
         actualWidth,
         containerWidth,
         offsetWidth: element?.offsetWidth,
         clientWidth: element?.clientWidth,
         scrollWidth: element?.scrollWidth,
-        element: !!element
+        element: !!element,
       });
     };
-    
+
     checkContainer();
   }, [containerWidth]);
 
@@ -102,12 +105,14 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
   // 加载更多项目
   const loadMoreItems = useCallback(() => {
     if (isLoadingMore || !hasNextPage) return;
-    
+
     setIsLoadingMore(true);
-    
+
     // 模拟异步加载
     setTimeout(() => {
-      setVisibleItemCount(prev => Math.min(prev + LOAD_MORE_BATCH_SIZE, totalItemCount));
+      setVisibleItemCount((prev) =>
+        Math.min(prev + LOAD_MORE_BATCH_SIZE, totalItemCount)
+      );
       setIsLoadingMore(false);
     }, 100);
   }, [isLoadingMore, hasNextPage, totalItemCount]);
@@ -119,86 +124,99 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
   const isSingleRow = rowCount === 1;
 
   // 渲染单个网格项 - 支持react-window v2.1.0的ariaAttributes
-  const CellComponent = useCallback(({ 
-    ariaAttributes,
-    columnIndex, 
-    rowIndex, 
-    style,
-    displayData: cellDisplayData,
-    viewMode: cellViewMode,
-    searchQuery: cellSearchQuery,
-    columnCount: cellColumnCount,
-    displayItemCount: cellDisplayItemCount,
-    groupStatsRef: cellGroupStatsRef,
-    getGroupRef: cellGetGroupRef,
-    computeGroupStats: cellComputeGroupStats,
-  }: any) => {
-    const index = rowIndex * cellColumnCount + columnIndex;
-    
-    // 如果超出显示范围，返回隐藏的占位符
-    if (index >= cellDisplayItemCount) {
-      return <div style={{ ...style, visibility: 'hidden' }} />;
-    }
+  const CellComponent = useCallback(
+    ({
+      ariaAttributes,
+      columnIndex,
+      rowIndex,
+      style,
+      displayData: cellDisplayData,
+      viewMode: cellViewMode,
+      searchQuery: cellSearchQuery,
+      columnCount: cellColumnCount,
+      displayItemCount: cellDisplayItemCount,
+      groupStatsRef: cellGroupStatsRef,
+      getGroupRef: cellGetGroupRef,
+      computeGroupStats: cellComputeGroupStats,
+    }: any) => {
+      const index = rowIndex * cellColumnCount + columnIndex;
 
-    const item = cellDisplayData[index];
-
-    if (!item) {
-      return <div style={{ ...style, visibility: 'hidden' }} />;
-    }
-
-    // 根据视图模式渲染不同内容
-    if (cellViewMode === 'agg') {
-      const [mapKey, group] = item as [string, SearchResult[]];
-      const title = group[0]?.title || '';
-      const poster = group[0]?.poster || '';
-      const year = group[0]?.year || 'unknown';
-      const { episodes, source_names, douban_id } = cellComputeGroupStats(group);
-      const type = episodes === 1 ? 'movie' : 'tv';
-
-      // 如果该聚合第一次出现，写入初始统计
-      if (!cellGroupStatsRef.current.has(mapKey)) {
-        cellGroupStatsRef.current.set(mapKey, { episodes, source_names, douban_id });
+      // 如果超出显示范围，返回隐藏的占位符
+      if (index >= cellDisplayItemCount) {
+        return <div style={{ ...style, visibility: 'hidden' }} />;
       }
 
-      return (
-        <div style={{ ...style, padding: '8px' }} {...ariaAttributes}>
-          <VideoCard
-            ref={cellGetGroupRef(mapKey)}
-            from='search'
-            isAggregate={true}
-            title={title}
-            poster={poster}
-            year={year}
-            episodes={episodes}
-            source_names={source_names}
-            douban_id={douban_id}
-            query={cellSearchQuery.trim() !== title ? cellSearchQuery.trim() : ''}
-            type={type}
-          />
-        </div>
-      );
-    } else {
-      const searchItem = item as SearchResult;
-      return (
-        <div style={{ ...style, padding: '8px' }} {...ariaAttributes}>
-          <VideoCard
-            id={searchItem.id}
-            title={searchItem.title}
-            poster={searchItem.poster}
-            episodes={searchItem.episodes.length}
-            source={searchItem.source}
-            source_name={searchItem.source_name}
-            douban_id={searchItem.douban_id}
-            query={cellSearchQuery.trim() !== searchItem.title ? cellSearchQuery.trim() : ''}
-            year={searchItem.year}
-            from='search'
-            type={searchItem.episodes.length > 1 ? 'tv' : 'movie'}
-          />
-        </div>
-      );
-    }
-  }, []);
+      const item = cellDisplayData[index];
 
+      if (!item) {
+        return <div style={{ ...style, visibility: 'hidden' }} />;
+      }
+
+      // 根据视图模式渲染不同内容
+      if (cellViewMode === 'agg') {
+        const [mapKey, group] = item as [string, SearchResult[]];
+        const title = group[0]?.title || '';
+        const poster = group[0]?.poster || '';
+        const year = group[0]?.year || 'unknown';
+        const { episodes, source_names, douban_id } =
+          cellComputeGroupStats(group);
+        const type = episodes === 1 ? 'movie' : 'tv';
+
+        // 如果该聚合第一次出现，写入初始统计
+        if (!cellGroupStatsRef.current.has(mapKey)) {
+          cellGroupStatsRef.current.set(mapKey, {
+            episodes,
+            source_names,
+            douban_id,
+          });
+        }
+
+        return (
+          <div style={{ ...style, padding: '8px' }} {...ariaAttributes}>
+            <VideoCard
+              ref={cellGetGroupRef(mapKey)}
+              from='search'
+              isAggregate={true}
+              title={title}
+              poster={poster}
+              year={year}
+              episodes={episodes}
+              source_names={source_names}
+              douban_id={douban_id}
+              query={
+                cellSearchQuery.trim() !== title ? cellSearchQuery.trim() : ''
+              }
+              type={type}
+            />
+          </div>
+        );
+      } else {
+        const searchItem = item as SearchResult;
+        return (
+          <div style={{ ...style, padding: '8px' }} {...ariaAttributes}>
+            <VideoCard
+              id={searchItem.id}
+              title={searchItem.title}
+              poster={searchItem.poster}
+              episodes={searchItem.episodes.length}
+              source={searchItem.source}
+              source_name={searchItem.source_name}
+              douban_id={searchItem.douban_id}
+              query={
+                cellSearchQuery.trim() !== searchItem.title
+                  ? cellSearchQuery.trim()
+                  : ''
+              }
+              year={searchItem.year}
+              from='search'
+              type={searchItem.episodes.length > 1 ? 'tv' : 'movie'}
+            />
+          </div>
+        );
+      }
+    },
+    []
+  );
 
   return (
     <div ref={containerRef} className='w-full'>
@@ -239,8 +257,10 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
           rowHeight={itemHeight + 16}
           overscanCount={3}
           // 添加ARIA支持提升无障碍体验
-          role="grid"
-          aria-label={`搜索结果列表 "${searchQuery}"，共${displayItemCount}个结果，当前视图：${viewMode === 'agg' ? '聚合视图' : '全部结果'}`}
+          role='grid'
+          aria-label={`搜索结果列表 "${searchQuery}"，共${displayItemCount}个结果，当前视图：${
+            viewMode === 'agg' ? '聚合视图' : '全部结果'
+          }`}
           aria-rowcount={rowCount}
           aria-colcount={columnCount}
           style={{
@@ -261,13 +281,17 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
             const { rowStopIndex: visibleRowStopIndex } = visibleCells;
 
             // 简化逻辑：基于可见行检测
-            if (visibleRowStopIndex >= rowCount - LOAD_MORE_THRESHOLD && hasNextPage && !isLoadingMore) {
+            if (
+              visibleRowStopIndex >= rowCount - LOAD_MORE_THRESHOLD &&
+              hasNextPage &&
+              !isLoadingMore
+            ) {
               loadMoreItems();
             }
           }}
         />
       )}
-      
+
       {/* 加载更多指示器 */}
       {containerWidth > 100 && isLoadingMore && (
         <div className='flex justify-center items-center py-4'>
@@ -277,13 +301,15 @@ export const VirtualSearchGrid: React.FC<VirtualSearchGridProps> = ({
           </span>
         </div>
       )}
-      
+
       {/* 已加载完所有内容的提示 */}
-      {containerWidth > 100 && !hasNextPage && displayItemCount > INITIAL_BATCH_SIZE && (
-        <div className='text-center py-4 text-sm text-gray-500 dark:text-gray-400'>
-          已显示全部 {displayItemCount} 个结果
-        </div>
-      )}
+      {containerWidth > 100 &&
+        !hasNextPage &&
+        displayItemCount > INITIAL_BATCH_SIZE && (
+          <div className='text-center py-4 text-sm text-gray-500 dark:text-gray-400'>
+            已显示全部 {displayItemCount} 个结果
+          </div>
+        )}
     </div>
   );
 };
