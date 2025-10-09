@@ -362,7 +362,7 @@ function MVPlayPageClient() {
                       {mvDetail.duration > 0 && (
                         <span>时长: {formatDuration(mvDetail.duration)}</span>
                       )}
-                      {mvDetail.playCount > 0 && (
+                      {mvDetail.playCount && mvDetail.playCount > 0 && (
                         <span>
                           播放量: {formatPlayCount(mvDetail.playCount)}
                         </span>

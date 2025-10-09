@@ -33,8 +33,8 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     { icon: Film, label: '类型', href: '#type', special: 'type' },
     { icon: Music, label: '音乐', href: '#music', special: 'music' },
   ]);
-  const typeMenuRef = useRef<HTMLDivElement>(null);
-  const musicMenuRef = useRef<HTMLDivElement>(null);
+  const typeMenuRef = useRef<HTMLLIElement>(null);
+  const musicMenuRef = useRef<HTMLLIElement>(null);
 
   // 当前激活路径：优先使用传入的 activePath，否则回退到浏览器地址
   const currentActive = activePath ?? pathname;
