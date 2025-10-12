@@ -292,7 +292,10 @@ export class UpstashRedisStorage implements IStorage {
 
     // 重建 SET 以便下次使用
     if (users.length > 0) {
-      await withRetry(() => this.client.sadd('users:set', ...users));
+      // Upstash 的 sadd 可以接受数组
+      for (const user of users) {
+        await withRetry(() => this.client.sadd('users:set', user));
+      }
     }
 
     return users;

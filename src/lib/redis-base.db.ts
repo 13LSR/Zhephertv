@@ -415,7 +415,7 @@ export abstract class BaseRedisStorage implements IStorage {
     // 重建 SET 以便下次使用
     if (users.length > 0) {
       console.log(`[Redis] Rebuilding users:set with ${users.length} users`);
-      await this.withRetry(() => this.client.sAdd('users:set', ...users));
+      await this.withRetry(() => this.client.sAdd('users:set', users));
     }
 
     return users;
