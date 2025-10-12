@@ -281,6 +281,8 @@ export abstract class BaseRedisStorage implements IStorage {
     await this.withRetry(() =>
       this.client.set(this.userPwdKey(userName), password)
     );
+    // 将用户名添加到用户列表 SET 中，避免后续 keys 扫描
+    await this.withRetry(() => this.client.sAdd('users:set', userName));
   }
 
   async verifyUser(userName: string, password: string): Promise<boolean> {
@@ -313,6 +315,9 @@ export abstract class BaseRedisStorage implements IStorage {
   async deleteUser(userName: string): Promise<void> {
     // 删除用户密码
     await this.withRetry(() => this.client.del(this.userPwdKey(userName)));
+
+    // 从用户列表 SET 中移除
+    await this.withRetry(() => this.client.sRem('users:set', userName));
 
     // 删除搜索历史
     await this.withRetry(() => this.client.del(this.shKey(userName)));
@@ -383,13 +388,37 @@ export abstract class BaseRedisStorage implements IStorage {
 
   // ---------- 获取全部用户 ----------
   async getAllUsers(): Promise<string[]> {
+    console.log('[Redis] getAllUsers() called - attempting to use users:set');
+    // 优先从 SET 获取用户列表（高效）
+    const usersFromSet = await this.withRetry(() =>
+      this.client.sMembers('users:set')
+    );
+    console.log(
+      `[Redis] users:set returned ${usersFromSet?.length || 0} users:`,
+      usersFromSet
+    );
+    if (usersFromSet && usersFromSet.length > 0) {
+      console.log('[Redis] Using users from SET - optimization working!');
+      return usersFromSet.map(ensureString);
+    }
+
+    // 如果 SET 为空（可能是老数据），则使用 keys 扫描并重建 SET
+    console.log('[Redis] users:set is empty, falling back to KEYS scan');
     const keys = await this.withRetry(() => this.client.keys('u:*:pwd'));
-    return keys
+    const users = keys
       .map((k) => {
         const match = k.match(/^u:(.+?):pwd$/);
         return match ? ensureString(match[1]) : undefined;
       })
       .filter((u): u is string => typeof u === 'string');
+
+    // 重建 SET 以便下次使用
+    if (users.length > 0) {
+      console.log(`[Redis] Rebuilding users:set with ${users.length} users`);
+      await this.withRetry(() => this.client.sAdd('users:set', ...users));
+    }
+
+    return users;
   }
 
   // ---------- 管理员配置 ----------

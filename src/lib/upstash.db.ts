@@ -98,15 +98,18 @@ export class UpstashRedisStorage implements IStorage {
     const keys: string[] = await withRetry(() => this.client.keys(pattern));
     if (keys.length === 0) return {};
 
+    // 使用 mget 批量获取，减少请求次数
+    const values = await withRetry(() => this.client.mget(...keys));
+
     const result: Record<string, PlayRecord> = {};
-    for (const fullKey of keys) {
-      const value = await withRetry(() => this.client.get(fullKey));
+    keys.forEach((fullKey, index) => {
+      const value = values[index];
       if (value) {
         // 截取 source+id 部分
         const keyPart = ensureString(fullKey.replace(`u:${userName}:pr:`, ''));
         result[keyPart] = value as PlayRecord;
       }
-    }
+    });
     return result;
   }
 
@@ -141,14 +144,17 @@ export class UpstashRedisStorage implements IStorage {
     const keys: string[] = await withRetry(() => this.client.keys(pattern));
     if (keys.length === 0) return {};
 
+    // 使用 mget 批量获取，减少请求次数
+    const values = await withRetry(() => this.client.mget(...keys));
+
     const result: Record<string, Favorite> = {};
-    for (const fullKey of keys) {
-      const value = await withRetry(() => this.client.get(fullKey));
+    keys.forEach((fullKey, index) => {
+      const value = values[index];
       if (value) {
         const keyPart = ensureString(fullKey.replace(`u:${userName}:fav:`, ''));
         result[keyPart] = value as Favorite;
       }
-    }
+    });
     return result;
   }
 
@@ -164,6 +170,8 @@ export class UpstashRedisStorage implements IStorage {
   async registerUser(userName: string, password: string): Promise<void> {
     // 简单存储明文密码，生产环境应加密
     await withRetry(() => this.client.set(this.userPwdKey(userName), password));
+    // 将用户名添加到用户列表 SET 中，避免后续 keys 扫描
+    await withRetry(() => this.client.sadd('users:set', userName));
   }
 
   async verifyUser(userName: string, password: string): Promise<boolean> {
@@ -196,6 +204,9 @@ export class UpstashRedisStorage implements IStorage {
   async deleteUser(userName: string): Promise<void> {
     // 删除用户密码
     await withRetry(() => this.client.del(this.userPwdKey(userName)));
+
+    // 从用户列表 SET 中移除
+    await withRetry(() => this.client.srem('users:set', userName));
 
     // 删除搜索历史
     await withRetry(() => this.client.del(this.shKey(userName)));
@@ -262,13 +273,29 @@ export class UpstashRedisStorage implements IStorage {
 
   // ---------- 获取全部用户 ----------
   async getAllUsers(): Promise<string[]> {
+    // 优先从 SET 获取用户列表（高效）
+    const usersFromSet = await withRetry(() =>
+      this.client.smembers('users:set')
+    );
+    if (usersFromSet && usersFromSet.length > 0) {
+      return usersFromSet.map(ensureString);
+    }
+
+    // 如果 SET 为空（可能是老数据），则使用 keys 扫描并重建 SET
     const keys = await withRetry(() => this.client.keys('u:*:pwd'));
-    return keys
+    const users = keys
       .map((k) => {
         const match = k.match(/^u:(.+?):pwd$/);
         return match ? ensureString(match[1]) : undefined;
       })
       .filter((u): u is string => typeof u === 'string');
+
+    // 重建 SET 以便下次使用
+    if (users.length > 0) {
+      await withRetry(() => this.client.sadd('users:set', ...users));
+    }
+
+    return users;
   }
 
   // ---------- 管理员配置 ----------

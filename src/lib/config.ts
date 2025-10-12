@@ -184,25 +184,15 @@ async function getInitConfig(
     CustomCategories: [],
   };
 
-  // 补充用户信息
-  let userNames: string[] = [];
-  try {
-    userNames = await db.getAllUsers();
-  } catch (e) {
-    console.error('获取用户列表失败:', e);
-  }
-  const allUsers = userNames
-    .filter((u) => u !== process.env.USERNAME)
-    .map((u) => ({
-      username: u,
-      role: 'user',
+  // 补充用户信息（仅在初始化时调用，后续由 configSelfCheck 从数据库配置中读取）
+  // 这里不再每次都调用 getAllUsers，减少请求数
+  const allUsers = [
+    {
+      username: process.env.USERNAME!,
+      role: 'owner',
       banned: false,
-    }));
-  allUsers.unshift({
-    username: process.env.USERNAME!,
-    role: 'owner',
-    banned: false,
-  });
+    },
+  ];
   adminConfig.UserConfig.Users = allUsers as any;
 
   // 从配置文件中补充源信息
