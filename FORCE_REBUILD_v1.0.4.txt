@@ -1,0 +1,5 @@
+This file forces Vercel to do a fresh build without cache.
+Version: 1.0.4
+Build timestamp: 2025-11-23T17:44:00+08:00
+Cache buster: force-rebuild-v1.0.4-final
+DO NOT DELETE THIS FILE until deployment is successful.
