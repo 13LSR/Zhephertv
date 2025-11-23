@@ -93,6 +93,11 @@ function PlayPageClient() {
     outro_time: 0,
   });
   const skipConfigRef = useRef(skipConfig);
+  // SkipConfig 缓存：避免重复请求
+  const skipConfigCacheRef = useRef<
+    Map<string, { enable: boolean; intro_time: number; outro_time: number }>
+  >(new Map());
+
   useEffect(() => {
     skipConfigRef.current = skipConfig;
   }, [
@@ -1299,8 +1304,11 @@ function PlayPageClient() {
 
     try {
       setSkipConfig(newConfig);
+      const cacheKey = `${currentSourceRef.current}+${currentIdRef.current}`;
+
       if (!newConfig.enable && !newConfig.intro_time && !newConfig.outro_time) {
         await deleteSkipConfig(currentSourceRef.current, currentIdRef.current);
+        skipConfigCacheRef.current.delete(cacheKey); // 删除缓存
         artPlayerRef.current.setting.update({
           name: '跳过片头片尾',
           html: '跳过片头片尾',
@@ -1364,6 +1372,7 @@ function PlayPageClient() {
           currentIdRef.current,
           newConfig
         );
+        skipConfigCacheRef.current.set(cacheKey, newConfig); // 更新缓存
       }
       console.log('跳过片头片尾配置已保存:', newConfig);
     } catch (err) {
@@ -1972,9 +1981,20 @@ function PlayPageClient() {
       if (!currentSource || !currentId) return;
 
       try {
+        const cacheKey = `${currentSource}+${currentId}`;
+
+        // 先检查缓存
+        const cachedConfig = skipConfigCacheRef.current.get(cacheKey);
+        if (cachedConfig) {
+          setSkipConfig(cachedConfig);
+          return;
+        }
+
+        // 缓存未命中，从 API 加载
         const config = await getSkipConfig(currentSource, currentId);
         if (config) {
           setSkipConfig(config);
+          skipConfigCacheRef.current.set(cacheKey, config); // 缓存配置
         }
       } catch (err) {
         console.error('读取跳过片头片尾配置失败:', err);

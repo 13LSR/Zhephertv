@@ -47,11 +47,17 @@ export async function GET(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error:
-            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks'],
+          disabled: true,
+          message: '统计功能已关闭',
+          username: authInfo.username,
+          totalWatchTime: 0,
+          totalPlays: 0,
+          lastPlayTime: 0,
+          recentRecords: [],
+          avgWatchTime: 0,
+          mostWatchedSource: '',
         },
-        { status: 400 }
+        { status: 200 }
       );
     }
 
@@ -153,11 +159,11 @@ export async function POST(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error:
-            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks'],
+          success: true,
+          message: '统计功能已关闭，跳过更新',
+          disabled: true,
         },
-        { status: 400 }
+        { status: 200 }
       );
     }
 
@@ -241,11 +247,11 @@ export async function PUT(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error:
-            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks'],
+          success: true,
+          message: '统计功能已关闭，跳过登入记录',
+          disabled: true,
         },
-        { status: 400 }
+        { status: 200 }
       );
     }
 
@@ -342,11 +348,11 @@ export async function DELETE(request: NextRequest) {
     if (!db.isStatsSupported()) {
       return NextResponse.json(
         {
-          error:
-            '当前存储类型不支持播放统计功能，请使用 Redis、Upstash 或 Kvrocks',
-          supportedTypes: ['redis', 'upstash', 'kvrocks'],
+          success: true,
+          message: '统计功能已关闭，无需清除',
+          disabled: true,
         },
-        { status: 400 }
+        { status: 200 }
       );
     }
 

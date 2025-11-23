@@ -12,6 +12,19 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    // 检查是否启用本地存储模式
+    const userDataStorage =
+      process.env.NEXT_PUBLIC_USER_DATA_STORAGE || 'remote';
+    if (userDataStorage === 'local') {
+      return NextResponse.json(
+        {
+          message: '播放记录使用浏览器本地存储，无需访问服务器',
+          mode: 'local',
+        },
+        { status: 200 }
+      );
+    }
+
     // 从 cookie 获取用户信息
     const authInfo = getAuthInfoFromCookie(request);
     if (!authInfo || !authInfo.username) {
@@ -45,6 +58,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // 检查是否启用本地存储模式
+    const userDataStorage =
+      process.env.NEXT_PUBLIC_USER_DATA_STORAGE || 'remote';
+    if (userDataStorage === 'local') {
+      return NextResponse.json(
+        {
+          success: true,
+          message: '播放记录使用浏览器本地存储，无需访问服务器',
+          mode: 'local',
+        },
+        { status: 200 }
+      );
+    }
+
     // 从 cookie 获取用户信息
     const authInfo = getAuthInfoFromCookie(request);
     if (!authInfo || !authInfo.username) {
@@ -131,6 +158,20 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // 检查是否启用本地存储模式
+    const userDataStorage =
+      process.env.NEXT_PUBLIC_USER_DATA_STORAGE || 'remote';
+    if (userDataStorage === 'local') {
+      return NextResponse.json(
+        {
+          success: true,
+          message: '播放记录使用浏览器本地存储，无需访问服务器',
+          mode: 'local',
+        },
+        { status: 200 }
+      );
+    }
+
     // 从 cookie 获取用户信息
     const authInfo = getAuthInfoFromCookie(request);
     if (!authInfo || !authInfo.username) {

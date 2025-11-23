@@ -23,6 +23,9 @@ const STORAGE_TYPE =
     | 'kvrocks'
     | undefined) || 'localstorage';
 
+// 统计功能开关：设置为 'true' 可以关闭统计功能，减少 Upstash 命令数
+const DISABLE_STATS = process.env.DISABLE_STATS === 'true';
+
 // 创建存储实例
 function createStorage(): IStorage {
   switch (STORAGE_TYPE) {
@@ -280,6 +283,30 @@ export class DbManager {
 
   // ---------- 播放统计相关 ----------
   async getPlayStats(): Promise<PlayStatsResult> {
+    // 如果统计功能已关闭，直接返回默认值，不访问 Upstash
+    if (DISABLE_STATS) {
+      return {
+        totalUsers: 0,
+        totalWatchTime: 0,
+        totalPlays: 0,
+        avgWatchTimePerUser: 0,
+        avgPlaysPerUser: 0,
+        userStats: [],
+        topSources: [],
+        dailyStats: [],
+        registrationStats: {
+          todayNewUsers: 0,
+          totalRegisteredUsers: 0,
+          registrationTrend: [],
+        },
+        activeUsers: {
+          daily: 0,
+          weekly: 0,
+          monthly: 0,
+        },
+      };
+    }
+
     if (typeof (this.storage as any).getPlayStats === 'function') {
       return (this.storage as any).getPlayStats();
     }
@@ -310,6 +337,19 @@ export class DbManager {
   }
 
   async getUserPlayStat(userName: string): Promise<UserPlayStat> {
+    // 如果统计功能已关闭，直接返回默认值，不访问 Upstash
+    if (DISABLE_STATS) {
+      return {
+        username: userName,
+        totalWatchTime: 0,
+        totalPlays: 0,
+        lastPlayTime: 0,
+        recentRecords: [],
+        avgWatchTime: 0,
+        mostWatchedSource: '',
+      };
+    }
+
     if (typeof (this.storage as any).getUserPlayStat === 'function') {
       return (this.storage as any).getUserPlayStat(userName);
     }
@@ -327,6 +367,11 @@ export class DbManager {
   }
 
   async getContentStats(limit = 10): Promise<ContentStat[]> {
+    // 如果统计功能已关闭，直接返回空数组，不访问 Upstash
+    if (DISABLE_STATS) {
+      return [];
+    }
+
     if (typeof (this.storage as any).getContentStats === 'function') {
       return (this.storage as any).getContentStats(limit);
     }
@@ -341,6 +386,11 @@ export class DbManager {
     _id: string,
     _watchTime: number
   ): Promise<void> {
+    // 如果统计功能已关闭，直接返回，不访问 Upstash
+    if (DISABLE_STATS) {
+      return;
+    }
+
     if (typeof (this.storage as any).updatePlayStatistics === 'function') {
       await (this.storage as any).updatePlayStatistics(
         _userName,
@@ -356,6 +406,11 @@ export class DbManager {
     loginTime: number,
     isFirstLogin?: boolean
   ): Promise<void> {
+    // 如果统计功能已关闭，直接返回，不访问 Upstash
+    if (DISABLE_STATS) {
+      return;
+    }
+
     if (typeof (this.storage as any).updateUserLoginStats === 'function') {
       await (this.storage as any).updateUserLoginStats(
         userName,
@@ -367,6 +422,11 @@ export class DbManager {
 
   // 检查存储类型是否支持统计功能
   isStatsSupported(): boolean {
+    // 如果统计功能已关闭，直接返回 false
+    if (DISABLE_STATS) {
+      return false;
+    }
+
     const storageType = process.env.NEXT_PUBLIC_STORAGE_TYPE || 'localstorage';
     return storageType !== 'localstorage';
   }

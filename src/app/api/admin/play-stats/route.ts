@@ -24,6 +24,35 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // 检查统计功能是否已关闭
+  if (!db.isStatsSupported()) {
+    return NextResponse.json(
+      {
+        disabled: true,
+        message: '统计功能已关闭',
+        totalUsers: 0,
+        totalWatchTime: 0,
+        totalPlays: 0,
+        avgWatchTimePerUser: 0,
+        avgPlaysPerUser: 0,
+        userStats: [],
+        topSources: [],
+        dailyStats: [],
+        registrationStats: {
+          todayNewUsers: 0,
+          totalRegisteredUsers: 0,
+          registrationTrend: [],
+        },
+        activeUsers: {
+          daily: 0,
+          weekly: 0,
+          monthly: 0,
+        },
+      },
+      { status: 200 }
+    );
+  }
+
   const authInfo = getAuthInfoFromCookie(request);
   if (!authInfo || !authInfo.username) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

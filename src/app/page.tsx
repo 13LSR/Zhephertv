@@ -99,6 +99,16 @@ function HomeClient() {
 
   const [favoriteItems, setFavoriteItems] = useState<FavoriteItem[]>([]);
 
+  // 缓存状态：避免重复请求
+  const [favoritesCache, setFavoritesCache] = useState<Record<
+    string,
+    any
+  > | null>(null);
+  const [playRecordsCache, setPlayRecordsCache] = useState<Record<
+    string,
+    any
+  > | null>(null);
+
   useEffect(() => {
     // 清理过期缓存
     cleanExpiredCache().catch(console.error);
@@ -206,7 +216,12 @@ function HomeClient() {
 
   // 处理收藏数据更新的函数
   const updateFavoriteItems = async (allFavorites: Record<string, any>) => {
-    const allPlayRecords = await getAllPlayRecords();
+    // 使用缓存的播放记录，如果没有缓存则请求
+    let allPlayRecords = playRecordsCache;
+    if (!allPlayRecords) {
+      allPlayRecords = await getAllPlayRecords();
+      setPlayRecordsCache(allPlayRecords); // 缓存播放记录
+    }
 
     // 根据保存时间排序（从近到远），过滤掉live类型的收藏夹
     const sorted = Object.entries(allFavorites)
@@ -218,7 +233,7 @@ function HomeClient() {
         const id = key.slice(plusIndex + 1);
 
         // 查找对应的播放记录，获取当前集数
-        const playRecord = allPlayRecords[key];
+        const playRecord = allPlayRecords![key];
         const currentEpisode = playRecord?.index;
 
         return {
@@ -242,22 +257,43 @@ function HomeClient() {
     if (activeTab !== 'favorites') return;
 
     const loadFavorites = async () => {
-      const allFavorites = await getAllFavorites();
+      // 使用缓存的收藏数据，如果没有缓存则请求
+      let allFavorites = favoritesCache;
+      if (!allFavorites) {
+        allFavorites = await getAllFavorites();
+        setFavoritesCache(allFavorites); // 缓存收藏数据
+      }
       await updateFavoriteItems(allFavorites);
     };
 
     loadFavorites();
 
     // 监听收藏更新事件
-    const unsubscribe = subscribeToDataUpdates(
+    const unsubscribeFavorites = subscribeToDataUpdates(
       'favoritesUpdated',
       (newFavorites: Record<string, any>) => {
+        setFavoritesCache(newFavorites); // 更新缓存
         updateFavoriteItems(newFavorites);
       }
     );
 
-    return unsubscribe;
-  }, [activeTab]);
+    // 监听播放记录更新事件
+    const unsubscribePlayRecords = subscribeToDataUpdates(
+      'playRecordsUpdated',
+      (newPlayRecords: Record<string, any>) => {
+        setPlayRecordsCache(newPlayRecords); // 更新播放记录缓存
+        // 如果有收藏缓存，重新计算收藏列表
+        if (favoritesCache) {
+          updateFavoriteItems(favoritesCache);
+        }
+      }
+    );
+
+    return () => {
+      unsubscribeFavorites();
+      unsubscribePlayRecords();
+    };
+  }, [activeTab, favoritesCache, playRecordsCache]);
 
   const handleCloseAnnouncement = (announcement: string) => {
     setShowAnnouncement(false);
@@ -305,6 +341,7 @@ function HomeClient() {
                     onClick={async () => {
                       await clearAllFavorites();
                       setFavoriteItems([]);
+                      setFavoritesCache({}); // 清空缓存
                     }}
                   >
                     清空
