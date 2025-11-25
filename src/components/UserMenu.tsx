@@ -23,11 +23,12 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
+import type { Favorite, PlayRecord } from '@/lib/db.client';
 import {
-  type PlayRecord,
+  clearAllPlayRecords,
   forceRefreshPlayRecordsCache,
   getAllPlayRecords,
+  getAllFavorites,
 } from '@/lib/db.client';
 import type { Favorite } from '@/lib/types';
 import { CURRENT_VERSION } from '@/lib/version';
@@ -483,54 +484,64 @@ export const UserMenu: React.FC = () => {
     continueWatchingMaxProgress,
   ]);
 
-  // 加载收藏数据
+  // 加载收藏数据（头像菜单里的“我的收藏”弹窗）
   useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      authInfo?.username &&
-      storageType !== 'localstorage'
-    ) {
-      const loadFavorites = async () => {
-        try {
-          const response = await fetch('/api/favorites');
-          if (response.ok) {
-            const favoritesData = (await response.json()) as Record<
-              string,
-              Favorite
-            >;
-            const favoritesArray = Object.entries(favoritesData).map(
-              ([key, favorite]) => ({
-                ...(favorite as Favorite),
-                key,
-              })
-            );
-            // 按保存时间降序排列
-            const sortedFavorites = favoritesArray.sort(
-              (a, b) => b.save_time - a.save_time
-            );
-            setFavorites(sortedFavorites);
-          }
-        } catch (error) {
-          console.error('加载收藏失败:', error);
-        }
-      };
+    if (typeof window === 'undefined' || !authInfo?.username) return;
 
-      loadFavorites();
+    const loadFavorites = async () => {
+      try {
+        // 统一通过 db.client 获取收藏数据，内部会根据
+        // STORAGE_TYPE / USER_DATA_STORAGE 决定是走远程还是 localStorage
+        const favoritesData = await getAllFavorites();
+        const favoritesArray = Object.entries(favoritesData).map(
+          ([key, favorite]) => ({
+            ...(favorite as Favorite),
+            key,
+          })
+        );
+        // 按保存时间降序排列
+        const sortedFavorites = favoritesArray.sort(
+          (a, b) => b.save_time - a.save_time
+        );
+        setFavorites(sortedFavorites);
+      } catch (error) {
+        console.error('加载收藏失败:', error);
+      }
+    };
 
-      // 监听收藏更新事件（修复删除收藏后页面不立即更新的问题）
-      const handleFavoritesUpdate = () => {
-        console.log('UserMenu: 收藏更新，重新加载收藏列表');
+    loadFavorites();
+
+    // 监听收藏更新事件（删除/新增收藏后刷新列表）
+    const handleFavoritesUpdate = (event: Event) => {
+      console.log('UserMenu: 收藏更新，重新加载收藏列表');
+      // 如果事件里已经带了最新数据，可以直接使用；否则重新拉取
+      const customEvent = event as CustomEvent<Record<string, Favorite>>;
+      const detail = customEvent.detail;
+      if (detail && typeof detail === 'object') {
+        const favoritesArray = Object.entries(detail).map(
+          ([key, favorite]) => ({
+            ...(favorite as Favorite),
+            key,
+          })
+        );
+        const sortedFavorites = favoritesArray.sort(
+          (a, b) => b.save_time - a.save_time
+        );
+        setFavorites(sortedFavorites);
+      } else {
         loadFavorites();
-      };
+      }
+    };
 
-      // 监听收藏更新事件
-      window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
+    window.addEventListener('favoritesUpdated', handleFavoritesUpdate as any);
 
-      return () => {
-        window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
-      };
-    }
-  }, [authInfo, storageType]);
+    return () => {
+      window.removeEventListener(
+        'favoritesUpdated',
+        handleFavoritesUpdate as any
+      );
+    };
+  }, [authInfo]);
 
   // 点击外部区域关闭下拉框
   useEffect(() => {
