@@ -23,7 +23,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import type { Favorite, PlayRecord } from '@/lib/db.client';
+import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
+import type { PlayRecord } from '@/lib/db.client';
 import {
   clearAllPlayRecords,
   forceRefreshPlayRecordsCache,
