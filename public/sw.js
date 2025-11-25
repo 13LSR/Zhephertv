@@ -1,30 +1,30 @@
 if (!self.define) {
   let e,
     s = {};
-  const a = (a, n) => (
-    (a = new URL(a + '.js', n).href),
-    s[a] ||
+  const i = (i, c) => (
+    (i = new URL(i + '.js', c).href),
+    s[i] ||
       new Promise((s) => {
         if ('document' in self) {
           const e = document.createElement('script');
-          (e.src = a), (e.onload = s), document.head.appendChild(e);
-        } else (e = a), importScripts(a), s();
+          (e.src = i), (e.onload = s), document.head.appendChild(e);
+        } else (e = i), importScripts(i), s();
       }).then(() => {
-        let e = s[a];
-        if (!e) throw new Error(`Module ${a} didn’t register its module`);
+        let e = s[i];
+        if (!e) throw new Error(`Module ${i} didn’t register its module`);
         return e;
       })
   );
-  self.define = (n, c) => {
-    const i =
+  self.define = (c, n) => {
+    const a =
       e ||
       ('document' in self ? document.currentScript.src : '') ||
       location.href;
-    if (s[i]) return;
+    if (s[a]) return;
     let t = {};
-    const r = (e) => a(e, i),
-      f = { module: { uri: i }, exports: t, require: r };
-    s[i] = Promise.all(n.map((e) => f[e] || r(e))).then((e) => (c(...e), t));
+    const r = (e) => i(e, a),
+      o = { module: { uri: a }, exports: t, require: r };
+    s[a] = Promise.all(c.map((e) => o[e] || r(e))).then((e) => (n(...e), t));
   };
 }
 define(['./workbox-e9849328'], function (e) {
@@ -36,19 +36,19 @@ define(['./workbox-e9849328'], function (e) {
       [
         {
           url: '/_next/app-build-manifest.json',
-          revision: '6ce9a179e8d18ab4c5af451394a8fe22',
+          revision: '39d0bad3bf54b07c599d54c862e29dec',
         },
         {
-          url: '/_next/static/GYMMTf5q27P90-4DOThaC/_buildManifest.js',
+          url: '/_next/static/WhT-1920kkiPTRKLCick1/_buildManifest.js',
           revision: '046380ae5bc74b46b6d5eac3eed65355',
         },
         {
-          url: '/_next/static/GYMMTf5q27P90-4DOThaC/_ssgManifest.js',
+          url: '/_next/static/WhT-1920kkiPTRKLCick1/_ssgManifest.js',
           revision: 'b6652df95db52feb4daf4eca35380933',
         },
         {
           url: '/_next/static/chunks/123-b5824606109bf7c9.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/264.fe9ebe2758db78b6.js',
@@ -56,19 +56,19 @@ define(['./workbox-e9849328'], function (e) {
         },
         {
           url: '/_next/static/chunks/29-147aefe3d1326a5c.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/32.e0675a1c3e605611.js',
           revision: 'e0675a1c3e605611',
         },
         {
-          url: '/_next/static/chunks/405-6b53b29ed664583b.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          url: '/_next/static/chunks/405-4ebd834b3e06b592.js',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/429-568201868df0589a.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/499.75f65f21fd516c4e.js',
@@ -76,111 +76,111 @@ define(['./workbox-e9849328'], function (e) {
         },
         {
           url: '/_next/static/chunks/513-c8e358d752722b33.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/51b697cb-6aa6f0a91173421a.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/697-49a6e0690bd92c95.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/6cd9b098-3d6e2a71429d4b56.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/833-2c38e1c07f4f0520.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/_not-found/page-49e110685307904d.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/admin/page-f3505a8bc58c81f1.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/douban/page-f3bead41aff80cfb.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/layout-a9dfb61f36d9ffe6.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/login/page-fbb991848d47d436.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/music/page-1921a75376fcd0d0.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/mv/page-1bc88f7c38113db3.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/mv/play/page-bdb668a5a8c80993.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/page-5dc073d240f7e941.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/play-stats/page-6fdc1830d8d73d2e.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/play/page-f6dd23a1678086c2.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/register/page-ed23691c24634252.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/release-calendar/page-f6f766e65a452808.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/search/page-3abfe0b53f290805.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/shortdrama/page-5ff4c44dcb313077.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/tvbox/page-89cb95f88ccb1e27.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/app/warning/page-11cba4cf9332a238.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/framework-6e06c675866dc992.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/main-5ee3086d0cb21802.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/main-app-ac64f872bc8e7054.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/pages/_app-792b631a362c29e1.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/pages/_error-9fde6601392a2a99.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/chunks/polyfills-42372ed130431b0a.js',
@@ -188,7 +188,7 @@ define(['./workbox-e9849328'], function (e) {
         },
         {
           url: '/_next/static/chunks/webpack-49ab851359529c5e.js',
-          revision: 'GYMMTf5q27P90-4DOThaC',
+          revision: 'WhT-1920kkiPTRKLCick1',
         },
         {
           url: '/_next/static/css/50f0fad2ca8d29c5.css',
@@ -271,8 +271,8 @@ define(['./workbox-e9849328'], function (e) {
             cacheWillUpdate: async ({
               request: e,
               response: s,
-              event: a,
-              state: n,
+              event: i,
+              state: c,
             }) =>
               s && 'opaqueredirect' === s.type
                 ? new Response(s.body, {

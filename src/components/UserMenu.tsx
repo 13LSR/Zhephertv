@@ -382,104 +382,97 @@ export const UserMenu: React.FC = () => {
 
   // 加载播放记录（优化版）
   useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      authInfo?.username &&
-      storageType !== 'localstorage'
-    ) {
-      const loadPlayRecords = async () => {
-        try {
-          const records = await getAllPlayRecords();
-          const recordsArray = Object.entries(records).map(([key, record]) => ({
-            ...record,
-            key,
-          }));
+    if (typeof window === 'undefined' || !authInfo?.username) {
+      return;
+    }
+    const loadPlayRecords = async () => {
+      try {
+        const records = await getAllPlayRecords();
+        const recordsArray = Object.entries(records).map(([key, record]) => ({
+          ...record,
+          key,
+        }));
 
-          // 筛选真正需要继续观看的记录
+        // 筛选真正需要继续观看的记录
+        const validPlayRecords = recordsArray.filter((record) => {
+          const progress = getProgress(record);
+
+          // 播放时间必须超过2分钟
+          if (record.play_time < 120) return false;
+
+          // 如果禁用了进度筛选，则显示所有播放时间超过2分钟的记录
+          if (!enableContinueWatchingFilter) return true;
+
+          // 根据用户自定义的进度范围筛选
+          return (
+            progress >= continueWatchingMinProgress &&
+            progress <= continueWatchingMaxProgress
+          );
+        });
+
+        // 按最后播放时间降序排列
+        const sortedRecords = validPlayRecords.sort(
+          (a, b) => b.save_time - a.save_time
+        );
+        setPlayRecords(sortedRecords.slice(0, 12)); // 只取最近的12个
+      } catch (error) {
+        console.error('加载播放记录失败:', error);
+      }
+    };
+
+    loadPlayRecords();
+
+    // 监听播放记录更新事件（修复删除记录后页面不立即更新的问题）
+    const handlePlayRecordsUpdate = () => {
+      console.log('UserMenu: 播放记录更新，重新加载继续观看列表');
+      loadPlayRecords();
+    };
+
+    // 监听播放记录更新事件
+    window.addEventListener('playRecordsUpdated', handlePlayRecordsUpdate);
+
+    // 🔥 新增：监听watching-updates事件，与ContinueWatching组件保持一致
+    const unsubscribeWatchingUpdates = subscribeToWatchingUpdatesEvent(() => {
+      console.log('UserMenu: 收到watching-updates事件');
+
+      // 当检测到新集数更新时，强制刷新播放记录缓存确保数据同步
+      const updates = getDetailedWatchingUpdates();
+      if (updates && updates.hasUpdates && updates.updatedCount > 0) {
+        console.log('UserMenu: 检测到新集数更新，强制刷新播放记录缓存');
+        forceRefreshPlayRecordsCache();
+
+        // 短暂延迟后重新获取播放记录，确保缓存已刷新
+        setTimeout(async () => {
+          const freshRecords = await getAllPlayRecords();
+          const recordsArray = Object.entries(freshRecords).map(
+            ([key, record]) => ({
+              ...record,
+              key,
+            })
+          );
           const validPlayRecords = recordsArray.filter((record) => {
             const progress = getProgress(record);
-
-            // 播放时间必须超过2分钟
             if (record.play_time < 120) return false;
-
-            // 如果禁用了进度筛选，则显示所有播放时间超过2分钟的记录
             if (!enableContinueWatchingFilter) return true;
-
-            // 根据用户自定义的进度范围筛选
             return (
               progress >= continueWatchingMinProgress &&
               progress <= continueWatchingMaxProgress
             );
           });
-
-          // 按最后播放时间降序排列
           const sortedRecords = validPlayRecords.sort(
             (a, b) => b.save_time - a.save_time
           );
-          setPlayRecords(sortedRecords.slice(0, 12)); // 只取最近的12个
-        } catch (error) {
-          console.error('加载播放记录失败:', error);
-        }
-      };
+          setPlayRecords(sortedRecords.slice(0, 12));
+        }, 100);
+      }
+    });
 
-      loadPlayRecords();
-
-      // 监听播放记录更新事件（修复删除记录后页面不立即更新的问题）
-      const handlePlayRecordsUpdate = () => {
-        console.log('UserMenu: 播放记录更新，重新加载继续观看列表');
-        loadPlayRecords();
-      };
-
-      // 监听播放记录更新事件
-      window.addEventListener('playRecordsUpdated', handlePlayRecordsUpdate);
-
-      // 🔥 新增：监听watching-updates事件，与ContinueWatching组件保持一致
-      const unsubscribeWatchingUpdates = subscribeToWatchingUpdatesEvent(() => {
-        console.log('UserMenu: 收到watching-updates事件');
-
-        // 当检测到新集数更新时，强制刷新播放记录缓存确保数据同步
-        const updates = getDetailedWatchingUpdates();
-        if (updates && updates.hasUpdates && updates.updatedCount > 0) {
-          console.log('UserMenu: 检测到新集数更新，强制刷新播放记录缓存');
-          forceRefreshPlayRecordsCache();
-
-          // 短暂延迟后重新获取播放记录，确保缓存已刷新
-          setTimeout(async () => {
-            const freshRecords = await getAllPlayRecords();
-            const recordsArray = Object.entries(freshRecords).map(
-              ([key, record]) => ({
-                ...record,
-                key,
-              })
-            );
-            const validPlayRecords = recordsArray.filter((record) => {
-              const progress = getProgress(record);
-              if (record.play_time < 120) return false;
-              if (!enableContinueWatchingFilter) return true;
-              return (
-                progress >= continueWatchingMinProgress &&
-                progress <= continueWatchingMaxProgress
-              );
-            });
-            const sortedRecords = validPlayRecords.sort(
-              (a, b) => b.save_time - a.save_time
-            );
-            setPlayRecords(sortedRecords.slice(0, 12));
-          }, 100);
-        }
-      });
-
-      return () => {
-        window.removeEventListener(
-          'playRecordsUpdated',
-          handlePlayRecordsUpdate
-        );
-        unsubscribeWatchingUpdates(); // 🔥 清理watching-updates订阅
-      };
-    }
+    return () => {
+      window.removeEventListener('playRecordsUpdated', handlePlayRecordsUpdate);
+      unsubscribeWatchingUpdates(); // 🔥 清理watching-updates订阅
+    };
   }, [
     authInfo,
-    storageType,
     enableContinueWatchingFilter,
     continueWatchingMinProgress,
     continueWatchingMaxProgress,

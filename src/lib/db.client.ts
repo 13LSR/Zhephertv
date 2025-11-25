@@ -1054,8 +1054,8 @@ export async function addSearchHistory(keyword: string): Promise<void> {
  * 数据库存储模式下使用乐观更新：先更新缓存，再异步同步到数据库。
  */
 export async function clearSearchHistory(): Promise<void> {
-  // 数据库存储模式：乐观更新策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
+  // 远程存储模式：乐观更新策略（包括 redis 和 upstash）
+  if (STORAGE_TYPE !== 'localstorage' && USER_DATA_STORAGE !== 'local') {
     // 立即更新缓存
     cacheManager.cacheSearchHistory([]);
 
@@ -1093,7 +1093,7 @@ export async function clearSearchHistory(): Promise<void> {
  */
 export async function clearAllSearchHistory(): Promise<void> {
   // 数据库存储模式：乐观更新策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
+  if (STORAGE_TYPE !== 'localstorage' && USER_DATA_STORAGE !== 'local') {
     // 立即更新缓存为空数组
     cacheManager.cacheSearchHistory([]);
 
@@ -1262,7 +1262,8 @@ export async function saveFavorite(
   const key = generateStorageKey(source, id);
 
   // 数据库存储模式：乐观更新策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
+  // 只有在站点整体不是 localstorage 且未启用用户数据本地化时才访问远程 API
+  if (STORAGE_TYPE !== 'localstorage' && USER_DATA_STORAGE !== 'local') {
     // 立即更新缓存
     const cachedFavorites = cacheManager.getCachedFavorites() || {};
     cachedFavorites[key] = favorite;
@@ -1383,8 +1384,8 @@ export async function isFavorited(
 ): Promise<boolean> {
   const key = generateStorageKey(source, id);
 
-  // 数据库存储模式：使用混合缓存策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
+  // 远程存储模式：使用混合缓存策略（包括 redis 和 upstash）
+  if (STORAGE_TYPE !== 'localstorage' && USER_DATA_STORAGE !== 'local') {
     const cachedFavorites = cacheManager.getCachedFavorites();
 
     if (cachedFavorites) {
