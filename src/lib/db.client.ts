@@ -78,6 +78,7 @@ const PLAY_RECORDS_CACHE_EXPIRE_TIME = 5 * 60 * 1000; // 播放记录5分钟缓�
 // 注意：豆瓣缓存配置已迁移到 douban.client.ts
 
 // ---- 环境变量 ----
+// 全局存储类型：决定整体站点是用 localstorage 还是 redis/upstash（例如用于配置、账号等）
 const STORAGE_TYPE = (() => {
   const raw =
     (typeof window !== 'undefined' &&
@@ -88,6 +89,20 @@ const STORAGE_TYPE = (() => {
       | 'upstash'
       | undefined) ||
     'localstorage';
+  return raw;
+})();
+
+// 用户数据存储类型：专门控制「播放记录 / 收藏 / 搜索历史 / 跳过配置」等用户个人数据
+// 当 NEXT_PUBLIC_USER_DATA_STORAGE=local 时，这些数据强制走 localStorage，不再访问 API
+const USER_DATA_STORAGE = (() => {
+  const raw =
+    (typeof window !== 'undefined' &&
+      (window as any).RUNTIME_CONFIG?.USER_DATA_STORAGE) ||
+    (process.env.NEXT_PUBLIC_USER_DATA_STORAGE as
+      | 'local'
+      | 'remote'
+      | undefined) ||
+    'remote';
   return raw;
 })();
 
@@ -684,8 +699,9 @@ export async function getAllPlayRecords(): Promise<Record<string, PlayRecord>> {
     return {};
   }
 
-  // 数据库存储模式：使用混合缓存策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
+  // 远程存储模式：使用混合缓存策略（包括 redis 和 upstash）
+  // 只有在站点整体不是 localstorage 且未启用用户数据本地化时才访问远程 API
+  if (STORAGE_TYPE !== 'localstorage' && USER_DATA_STORAGE !== 'local') {
     // 优先从缓存获取数据
     const cachedData = cacheManager.getCachedPlayRecords();
 
@@ -782,8 +798,8 @@ export async function savePlayRecord(
     }
   }
 
-  // 数据库存储模式：乐观更新策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
+  // 远程存储模式：乐观更新策略（包括 redis 和 upstash）
+  if (STORAGE_TYPE !== 'localstorage' && USER_DATA_STORAGE !== 'local') {
     // 立即更新缓存
     const cachedRecords = cacheManager.getCachedPlayRecords() || {};
     cachedRecords[key] = record;
@@ -855,8 +871,8 @@ export async function deletePlayRecord(
 ): Promise<void> {
   const key = generateStorageKey(source, id);
 
-  // 数据库存储模式：乐观更新策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
+  // 远程存储模式：乐观更新策略（包括 redis 和 upstash）
+  if (STORAGE_TYPE !== 'localstorage' && USER_DATA_STORAGE !== 'local') {
     // 立即更新缓存
     const cachedRecords = cacheManager.getCachedPlayRecords() || {};
     delete cachedRecords[key];
@@ -916,8 +932,8 @@ export async function getSearchHistory(): Promise<string[]> {
     return [];
   }
 
-  // 数据库存储模式：使用混合缓存策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
+  // 远程存储模式：使用混合缓存策略（包括 redis 和 upstash）
+  if (STORAGE_TYPE !== 'localstorage' && USER_DATA_STORAGE !== 'local') {
     // 优先从缓存获取数据
     const cachedData = cacheManager.getCachedSearchHistory();
 
@@ -978,8 +994,8 @@ export async function addSearchHistory(keyword: string): Promise<void> {
   const trimmed = keyword.trim();
   if (!trimmed) return;
 
-  // 数据库存储模式：乐观更新策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
+  // 远程存储模式：乐观更新策略（包括 redis 和 upstash）
+  if (STORAGE_TYPE !== 'localstorage' && USER_DATA_STORAGE !== 'local') {
     // 立即更新缓存
     const cachedHistory = cacheManager.getCachedSearchHistory() || [];
     const newHistory = [trimmed, ...cachedHistory.filter((k) => k !== trimmed)];
@@ -1180,8 +1196,8 @@ export async function getAllFavorites(): Promise<Record<string, Favorite>> {
     return {};
   }
 
-  // 数据库存储模式：使用混合缓存策略（包括 redis 和 upstash）
-  if (STORAGE_TYPE !== 'localstorage') {
+  // 远程存储模式：使用混合缓存策略（包括 redis 和 upstash）
+  if (STORAGE_TYPE !== 'localstorage' && USER_DATA_STORAGE !== 'local') {
     // 优先从缓存获取数据
     const cachedData = cacheManager.getCachedFavorites();
 
